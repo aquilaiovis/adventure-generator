@@ -26,30 +26,6 @@ public class SpriteRenderer
         return instance;
     }
 
-    public void setColor(float red, float green, float blue, float alpha)
-    {
-        gl.glColor4f(validateColor(red), validateColor(green), validateColor(blue), validateColor(alpha));
-    }
-
-    /**
-     * Makes sure the value is not outside 0 to 1
-     */
-    private float validateColor(float color)
-    {
-        if (color < 0)
-        {
-            return 0;
-        }
-        else if (color > 1)
-        {
-            return 1;
-        }
-        else
-        {
-            return color;
-        }
-    }
-
     public void drawSprite(Sprite sprite, Point center, float rotation, float width, float height)
     {
         Texture texture = sprite.getTexture();

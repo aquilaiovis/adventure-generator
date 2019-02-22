@@ -1,23 +1,25 @@
 package ch.kbw.render;
 
+import ch.kbw.utils.World;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLException;
-import ch.kbw.utils.World;
+import com.jogamp.opengl.glu.GLU;
 
 public class WorldRenderer implements GLEventListener
 {
     // Singleton
     private static WorldRenderer instance;
+    private GLU glu = new GLU();
+    private float rotateAdvance = 0;
 
     // Attributes
     private GL2 gl;
-    private float noTurningToleranceDegrees;
 
     private WorldRenderer()
     {
-        noTurningToleranceDegrees = 45;
+
     }
 
     public static WorldRenderer getInstance()
@@ -45,12 +47,20 @@ public class WorldRenderer implements GLEventListener
     {
         updateGL2(drawable);
 
-        gl.glClearColor(1, 1, 1, 1);
-
         gl.setSwapInterval(0);
-        gl.glEnable(GL2.GL_TEXTURE_2D);
-        gl.glEnable(GL2.GL_BLEND);
-        gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+        // For sprites
+        // gl.glEnable(GL2.GL_TEXTURE_3D);
+        // gl.glEnable(GL2.GL_BLEND);
+
+        // For transparency of sprites
+        // gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+
+        gl.glShadeModel(GL2.GL_SMOOTH);
+        gl.glClearColor(0f, 0f, 0f, 0f);
+        gl.glClearDepth(1.0f);
+        gl.glEnable(GL2.GL_DEPTH_TEST);
+        gl.glDepthFunc(GL2.GL_LEQUAL);
+        gl.glHint(GL2.GL_PERSPECTIVE_CORRECTION_HINT, GL2.GL_NICEST);
     }
 
     public void dispose(GLAutoDrawable drawable)
@@ -62,24 +72,44 @@ public class WorldRenderer implements GLEventListener
     {
         updateGL2(drawable);
 
-        gl.glClear(GL2.GL_COLOR_BUFFER_BIT);
+        gl.glShadeModel(GL2.GL_SMOOTH);
+        gl.glClearColor(0, 0, 0, 0);
+        gl.glClearDepth(1);
+        gl.glEnable(GL2.GL_DEPTH_TEST);
+        gl.glDepthFunc(GL2.GL_LEQUAL);
+        gl.glHint(GL2.GL_PERSPECTIVE_CORRECTION_HINT, GL2.GL_NICEST);
 
-        // gl.glRotatef(View.getInstance().getRotation(), 0, 0, 1);
-        gl.glTranslatef(-View.getInstance().getPosition().getX(), -View.getInstance().getPosition().getY(), 0);
+        // Clear the screen and the depth buffer
+        gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
+
+        // Reset the View
+        gl.glLoadIdentity();
+
+        gl.glRotatef(rotateAdvance, 0, 1, 0);
+
         World.getInstance().render();
-        gl.glTranslatef(View.getInstance().getPosition().getX(), View.getInstance().getPosition().getY(), 0);
-        // gl.glRotatef(-View.getInstance().getRotation(), 0, 0, 1);
+
+        rotateAdvance += 0.5f;
     }
 
     public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height)
     {
         updateGL2(drawable);
 
+        final GL2 gl = drawable.getGL().getGL2();
+        if (height <= 0)
+        {
+            height = 1;
+        }
+
+        final float h = (float) width / (float) height;
+        gl.glViewport(0, 0, width, height);
         gl.glMatrixMode(GL2.GL_PROJECTION);
         gl.glLoadIdentity();
 
-        gl.glOrtho(-WindowRenderer.getInstance().getWindowWidth() / 2, WindowRenderer.getInstance().getWindowWidth() / 2, 0, -WindowRenderer.getInstance().getWindowHeight(), -1, 1);
+        glu.gluPerspective(45.0f, h, 1.0, 20.0);
         gl.glMatrixMode(GL2.GL_MODELVIEW);
+        gl.glLoadIdentity();
     }
 
     public GL2 getGL2()

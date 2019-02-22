@@ -63,6 +63,8 @@ public class WindowRenderer
 
         // Show screen only after all settings are properly initialized
         window.setVisible(true);
+
+        window.setTitle("Adventure Generator");
     }
 
     public void render()
