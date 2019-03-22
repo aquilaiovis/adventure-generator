@@ -28,6 +28,7 @@ public class WindowRenderer
         fullscreen = false;
         targetFps = 60;
 
+        // Todo: Combine with triangle rendering
         // Increase flexibility by measuring in units instead of pixels
         windowWidth = 100;
     }

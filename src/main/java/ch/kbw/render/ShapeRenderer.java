@@ -3,6 +3,9 @@ package ch.kbw.render;
 import ch.kbw.utils.Point;
 import com.jogamp.opengl.GL2;
 
+import java.util.ArrayList;
+import java.util.Random;
+
 public class ShapeRenderer
 {
     // Singleton
@@ -25,7 +28,7 @@ public class ShapeRenderer
         return instance;
     }
 
-    public void setColor(float red, float green, float blue, float alpha)
+    private void setColor(float red, float green, float blue, float alpha)
     {
         gl.glColor4f(validateColor(red), validateColor(green), validateColor(blue), validateColor(alpha));
     }
@@ -49,22 +52,51 @@ public class ShapeRenderer
         }
     }
 
-    public void drawTriangle(Point point1, Point point2, Point point3)
+    public void drawTriangles(ArrayList<Point> points, int pointFieldWidth)
     {
         gl.glBegin(GL2.GL_TRIANGLES);
 
-        gl.glColor3f(1.0f, 0.0f, 0.0f);
-        gl.glVertex3f(0.5f, 2.0f, -6.0f);
+        int heightMultiplier = 5;
+        for (int i = 0; i < points.size() - pointFieldWidth - 1; i++)
+        {
+            if (getLength(points.get(i).getX() - points.get(i + 1).getX(), points.get(i).getY() - points.get(i + 1).getY()) < 2
+                    && getLength(points.get(i + 1).getX() - points.get(i + pointFieldWidth).getX(), points.get(i + 1).getY() - points.get(i + pointFieldWidth).getY()) < 2
+                    && getLength(points.get(i + pointFieldWidth).getX() - points.get(i).getX(), points.get(i + pointFieldWidth).getY() - points.get(i).getY()) < 2)
+            {
+                setColor(0.17f + points.get(i).getZ() * 10, 0.69f + points.get(i).getZ() * 10, 0.22f + points.get(i).getZ() * 10, 1);
+                gl.glVertex3f(points.get(i).getX(), points.get(i).getY(), points.get(i).getZ() * heightMultiplier);
+                gl.glVertex3f(points.get(i + 1).getX(), points.get(i + 1).getY(), points.get(i + 1).getZ() * heightMultiplier);
+                gl.glVertex3f(points.get(i + pointFieldWidth).getX(), points.get(i + pointFieldWidth).getY(), points.get(i + pointFieldWidth).getZ() * heightMultiplier);
+            }
 
-        gl.glColor3f(0.5f, 0.0f, 0.0f);
-        gl.glVertex3f(-1.5f, -1.0f, -5.0f);
+            if (getLength(points.get(i + 1).getX() - points.get(i + pointFieldWidth).getX(), points.get(i + 1).getY() - points.get(i + pointFieldWidth).getY()) < 2
+                    && getLength(points.get(i + pointFieldWidth).getX() - points.get(i + pointFieldWidth + 1).getX(), points.get(i + pointFieldWidth).getY() - points.get(i + pointFieldWidth + 1).getY()) < 2
+                    && getLength(points.get(i + pointFieldWidth + 1).getX() - points.get(i + 1).getX(), points.get(i + pointFieldWidth + 1).getY() - points.get(i + 1).getY()) < 2)
+            {
+                setColor(0.06f + points.get(i).getZ() * 10, 0.23f + points.get(i).getZ() * 10, 0.07f + points.get(i).getZ() * 10, 1);
+                gl.glVertex3f(points.get(i + 1).getX(), points.get(i + 1).getY(), points.get(i + 1).getZ() * heightMultiplier);
+                gl.glVertex3f(points.get(i + pointFieldWidth).getX(), points.get(i + pointFieldWidth).getY(), points.get(i + pointFieldWidth).getZ() * heightMultiplier);
+                gl.glVertex3f(points.get(i + pointFieldWidth + 1).getX(), points.get(i + pointFieldWidth + 1).getY(), points.get(i + pointFieldWidth + 1).getZ() * heightMultiplier);
+            }
 
-        gl.glColor3f(0.0f, 0.0f, 0.0f);
-        gl.glVertex3f(0.5f, -1.0f, -5.0f);
+        }
 
         // Finnish drawing
         gl.glEnd();
 
         gl.glFlush();
+    }
+
+    private float getLength(double xDifference, double yDifference)
+    {
+        if (xDifference < 0)
+        {
+            xDifference *= -1;
+        }
+        if (yDifference < 0)
+        {
+            yDifference *= -1;
+        }
+        return (float) Math.sqrt(xDifference * xDifference + yDifference * yDifference);
     }
 }

@@ -1,6 +1,9 @@
 package ch.kbw.render;
 
+import ch.kbw.input.KeyInput;
+import ch.kbw.utils.Point;
 import ch.kbw.utils.World;
+import com.jogamp.newt.event.KeyEvent;
 import com.jogamp.opengl.GL2;
 import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLEventListener;
@@ -78,6 +81,7 @@ public class WorldRenderer implements GLEventListener
         gl.glEnable(GL2.GL_DEPTH_TEST);
         gl.glDepthFunc(GL2.GL_LEQUAL);
         gl.glHint(GL2.GL_PERSPECTIVE_CORRECTION_HINT, GL2.GL_NICEST);
+        gl.glTranslatef(0, 100, 0);
 
         // Clear the screen and the depth buffer
         gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
@@ -85,11 +89,64 @@ public class WorldRenderer implements GLEventListener
         // Reset the View
         gl.glLoadIdentity();
 
-        gl.glRotatef(rotateAdvance, 0, 1, 0);
+        Point perspective = View.getInstance().getPerspective();
+        gl.glRotatef(perspective.getX(), 1, 0, 0);
+        gl.glRotatef(perspective.getY(), 0, 1, 0);
+        gl.glRotatef(perspective.getZ(), 0, 0, 1);
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_S))
+        {
+            perspective.addToX(1);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_W))
+        {
+            perspective.addToX(-1);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_Q))
+        {
+            perspective.addToY(1);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_E))
+        {
+            perspective.addToY(-1);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_A))
+        {
+            perspective.addToZ(-1);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_D))
+        {
+            perspective.addToZ(1);
+        }
+
+        Point position = View.getInstance().getPosition();
+        gl.glTranslatef(position.getX(), position.getY(), position.getZ());
+        float speed = 0.01f;
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD2))
+        {
+            position.addToX(speed);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD5))
+        {
+            position.addToX(-speed);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD6))
+        {
+            position.addToY(speed);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD4))
+        {
+            position.addToY(-speed);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD8))
+        {
+            position.addToZ(-speed);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD0))
+        {
+            position.addToZ(speed);
+        }
 
         World.getInstance().render();
-
-        rotateAdvance += 0.5f;
     }
 
     public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height)

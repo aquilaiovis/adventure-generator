@@ -14,7 +14,7 @@ public class View
     private View()
     {
         position = new Point(0, 0, 0);
-        perspective = new Point(1, 0, 0);
+        perspective = new Point(0, 0, 0);
     }
 
     public static View getInstance()

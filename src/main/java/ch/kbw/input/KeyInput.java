@@ -13,7 +13,7 @@ public class KeyInput implements KeyListener
 
     private KeyInput()
     {
-        // As of 02.12.2018 there are 171 different key codes for the Newt KeyEvent
+        // As of 01.03.2019 there are 171 different key codes for the Newt KeyEvent
         keys = new boolean[256];
     }
 

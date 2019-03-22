@@ -1,7 +1,7 @@
 package ch.kbw.utils;
 
 import ch.kbw.render.ShapeRenderer;
-import ch.kbw.render.SpriteRenderer;
+import ch.kbw.update.NoiseGenerator;
 
 import java.util.ArrayList;
 
@@ -10,15 +10,26 @@ public class World
     // Singleton
     private static World instance;
 
-    private ArrayList<Point> points;
+    private ArrayList<Point> allPoints;
+    private int chunkWidth, chunkHeight;
 
     private World()
     {
-        points = new ArrayList<>();
+        NoiseGenerator noiseGenerator = new NoiseGenerator();
 
-        points.add(new Point(0.5f, 2.0f, -6.0f));
-        points.add(new Point(-1.5f, -1.0f, -5.0f));
-        points.add(new Point(0.5f, -1.0f, -5.0f));
+        chunkWidth = 1;
+        chunkHeight = 1;
+
+        ArrayList<Double> heights = noiseGenerator.getHeights(chunkWidth, chunkHeight);
+        allPoints = new ArrayList<>();
+
+        for(int x=0; x<chunkWidth*100; x++)
+        {
+            for(int y=0; y<chunkHeight*100; y++)
+            {
+                allPoints.add(new Point(((float)x)/10, ((float)y)/10, Float.parseFloat(Double.toString(heights.get(x*chunkWidth*100 + y)))/10));
+            }
+        }
     }
 
     public static World getInstance()
@@ -37,6 +48,6 @@ public class World
 
     public void render()
     {
-        ShapeRenderer.getInstance().drawTriangle(points.get(0), points.get(1), points.get(2));
+        ShapeRenderer.getInstance().drawTriangles(allPoints, chunkWidth*100);
     }
 }
