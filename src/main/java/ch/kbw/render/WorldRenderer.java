@@ -9,13 +9,19 @@ import com.jogamp.opengl.GLAutoDrawable;
 import com.jogamp.opengl.GLEventListener;
 import com.jogamp.opengl.GLException;
 import com.jogamp.opengl.glu.GLU;
+import com.jogamp.opengl.util.texture.Texture;
+import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.FileInputStream;
 
 public class WorldRenderer implements GLEventListener
 {
     // Singleton
     private static WorldRenderer instance;
     private GLU glu = new GLU();
-    private float rotateAdvance = 0;
+    private int textureNumber;
 
     // Attributes
     private GL2 gl;
@@ -64,6 +70,18 @@ public class WorldRenderer implements GLEventListener
         gl.glEnable(GL2.GL_DEPTH_TEST);
         gl.glDepthFunc(GL2.GL_LEQUAL);
         gl.glHint(GL2.GL_PERSPECTIVE_CORRECTION_HINT, GL2.GL_NICEST);
+
+        gl.glEnable(GL2.GL_TEXTURE_2D);
+        try
+        {
+            BufferedImage image = ImageIO.read(new FileInputStream("res/grass.png"));
+            Texture texture = AWTTextureIO.newTexture(WindowRenderer.getInstance().getProfile(), image, true);
+            textureNumber = texture.getTextureObject(gl);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
     public void dispose(GLAutoDrawable drawable)
@@ -89,62 +107,7 @@ public class WorldRenderer implements GLEventListener
         // Reset the View
         gl.glLoadIdentity();
 
-        Point perspective = View.getInstance().getPerspective();
-        gl.glRotatef(perspective.getX(), 1, 0, 0);
-        gl.glRotatef(perspective.getY(), 0, 1, 0);
-        gl.glRotatef(perspective.getZ(), 0, 0, 1);
-        if(KeyInput.getInstance().isPressed(KeyEvent.VK_S))
-        {
-            perspective.addToX(1);
-        }
-        if(KeyInput.getInstance().isPressed(KeyEvent.VK_W))
-        {
-            perspective.addToX(-1);
-        }
-        if(KeyInput.getInstance().isPressed(KeyEvent.VK_Q))
-        {
-            perspective.addToY(1);
-        }
-        if(KeyInput.getInstance().isPressed(KeyEvent.VK_E))
-        {
-            perspective.addToY(-1);
-        }
-        if(KeyInput.getInstance().isPressed(KeyEvent.VK_A))
-        {
-            perspective.addToZ(-1);
-        }
-        if(KeyInput.getInstance().isPressed(KeyEvent.VK_D))
-        {
-            perspective.addToZ(1);
-        }
-
-        Point position = View.getInstance().getPosition();
-        gl.glTranslatef(position.getX(), position.getY(), position.getZ());
-        float speed = 0.01f;
-        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD2))
-        {
-            position.addToX(speed);
-        }
-        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD5))
-        {
-            position.addToX(-speed);
-        }
-        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD6))
-        {
-            position.addToY(speed);
-        }
-        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD4))
-        {
-            position.addToY(-speed);
-        }
-        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD8))
-        {
-            position.addToZ(-speed);
-        }
-        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD0))
-        {
-            position.addToZ(speed);
-        }
+        moveView();
 
         World.getInstance().render();
     }
@@ -172,5 +135,71 @@ public class WorldRenderer implements GLEventListener
     public GL2 getGL2()
     {
         return gl;
+    }
+
+    public int getTextureNumber()
+    {
+        return textureNumber;
+    }
+
+    private void moveView()
+    {
+        Point perspective = View.getInstance().getPerspective();
+        gl.glRotatef(perspective.getX(), 1, 0, 0);
+        gl.glRotatef(perspective.getY(), 0, 1, 0);
+        gl.glRotatef(perspective.getZ(), 0, 0, 1);
+        float rotationSpeed = 0.5f;
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_S))
+        {
+            perspective.addToX(rotationSpeed);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_W))
+        {
+            perspective.addToX(-rotationSpeed);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_Q))
+        {
+            perspective.addToY(rotationSpeed);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_E))
+        {
+            perspective.addToY(-rotationSpeed);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_A))
+        {
+            perspective.addToZ(-rotationSpeed);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_D))
+        {
+            perspective.addToZ(rotationSpeed);
+        }
+
+        Point position = View.getInstance().getPosition();
+        gl.glTranslatef(position.getX(), position.getY(), position.getZ());
+        float movementSpeed = 0.01f;
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD2))
+        {
+            position.addToX(movementSpeed);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD5))
+        {
+            position.addToX(-movementSpeed);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD6))
+        {
+            position.addToY(movementSpeed);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD4))
+        {
+            position.addToY(-movementSpeed);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD8))
+        {
+            position.addToZ(-movementSpeed);
+        }
+        if(KeyInput.getInstance().isPressed(KeyEvent.VK_NUMPAD0))
+        {
+            position.addToZ(movementSpeed);
+        }
     }
 }
