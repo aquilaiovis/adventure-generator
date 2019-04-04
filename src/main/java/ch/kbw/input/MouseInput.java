@@ -3,32 +3,23 @@ package ch.kbw.input;
 import com.jogamp.newt.event.KeyEvent;
 import com.jogamp.newt.event.MouseEvent;
 import com.jogamp.newt.event.MouseListener;
-import ch.kbw.render.WindowRenderer;
 
 public class MouseInput implements MouseListener
 {
-    // Singleton
-    private static MouseInput instance;
-
-    // Attributes
     private float mouseX, mouseY;
     private boolean[] buttons;
+    private float pixelsPerUnit, windowWidth, windowHeight;
 
-    private MouseInput()
+    public MouseInput(float pixelsPerUnit, float windowWidth, float windowHeight)
     {
+        this.pixelsPerUnit = pixelsPerUnit;
+        this.windowWidth = windowWidth;
+        this.windowHeight = windowHeight;
+
         mouseX = 0;
         mouseY = 0;
 
         buttons = new boolean[9];
-    }
-
-    public static MouseInput getInstance()
-    {
-        if (instance == null)
-        {
-            instance = new MouseInput();
-        }
-        return instance;
     }
 
     public void mouseClicked(MouseEvent e)
@@ -64,8 +55,9 @@ public class MouseInput implements MouseListener
 
     public void mouseMoved(MouseEvent e)
     {
-        mouseX = e.getX() / WindowRenderer.getInstance().getPixelsPerUnit() - WindowRenderer.getInstance().getWindowWidth() / 2;
-        mouseY = -(e.getY() / WindowRenderer.getInstance().getPixelsPerUnit()) + WindowRenderer.getInstance().getWindowHeight();
+        // Todo: Update this
+        mouseX = e.getX() / pixelsPerUnit - windowWidth / 2;
+        mouseY = -(e.getY() / pixelsPerUnit) + windowHeight;
     }
 
     public void mouseDragged(MouseEvent e)

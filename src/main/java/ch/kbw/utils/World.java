@@ -1,53 +1,74 @@
 package ch.kbw.utils;
 
-import ch.kbw.render.ShapeRenderer;
+import ch.kbw.input.KeyInput;
+import ch.kbw.input.MouseInput;
+import ch.kbw.render.RenderLoop;
 import ch.kbw.update.NoiseGenerator;
+import ch.kbw.update.UpdateLoop;
+import com.jogamp.newt.event.KeyEvent;
 
 import java.util.ArrayList;
 
 public class World
 {
-    // Singleton
-    private static World instance;
-
+    private UpdateLoop updateLoop;
+    private RenderLoop renderLoop;
+    private KeyInput keyInput;
+    private MouseInput mouseInput;
     private ArrayList<Point> allPoints;
-    private int chunkWidth, chunkHeight;
+    private int chunksX, chunksY;
+    private int chunkPointsPerSide;
 
-    private World()
+    public World(UpdateLoop updateLoop)
     {
+        this.updateLoop = updateLoop;
+        renderLoop = updateLoop.getRenderLoop();
+        keyInput = renderLoop.getKeyInput();
+        mouseInput = renderLoop.getMouseInput();
         NoiseGenerator noiseGenerator = new NoiseGenerator();
 
-        chunkWidth = 1;
-        chunkHeight = 1;
+        chunksX = 1;
+        chunksY = 1;
+        chunkPointsPerSide = 100;
 
-        ArrayList<Double> heights = noiseGenerator.getHeights(chunkWidth, chunkHeight);
+        // Todo: Fix arguments
+        ArrayList<Double> heights = noiseGenerator.getHeights(chunksX, chunksY);
         allPoints = new ArrayList<>();
 
-        for(int x=0; x<chunkWidth*100; x++)
+        for (int x = 0; x < chunksX * chunkPointsPerSide; x++)
         {
-            for(int y=0; y<chunkHeight*100; y++)
+            for (int y = 0; y < chunksY * chunkPointsPerSide; y++)
             {
-                allPoints.add(new Point(((float)x)/10, ((float)y)/10, Float.parseFloat(Double.toString(heights.get(x*chunkWidth*100 + y)))/10));
+                allPoints.add(new Point((float) x, (float) y, Float.parseFloat(Double.toString(heights.get(x * chunksX * chunkPointsPerSide + y))) * 5));
             }
         }
     }
 
-    public static World getInstance()
-    {
-        if (instance == null)
-        {
-            instance = new World();
-        }
-        return instance;
-    }
-
     public void update()
     {
-
+        if (keyInput.isPressed(KeyEvent.VK_ESCAPE))
+        {
+            updateLoop.setPaused(!updateLoop.isPaused());
+        }
     }
 
-    public void render()
+    public ArrayList<Point> getAllPoints()
     {
-        ShapeRenderer.getInstance().drawTriangles(allPoints, chunkWidth*100);
+        return allPoints;
+    }
+
+    public int getChunksX()
+    {
+        return chunksX;
+    }
+
+    public int getChunksY()
+    {
+        return chunksY;
+    }
+
+    public int getChunkPointsPerSide()
+    {
+        return chunkPointsPerSide;
     }
 }

@@ -11,15 +11,17 @@ import java.net.URL;
 
 public class Sprite
 {
+    private RenderLoop renderLoop;
     private Texture texture;
     private BufferedImage image;
 
-    public Sprite(String path)
+    public Sprite(RenderLoop renderLoop, String path)
     {
+        this.renderLoop = renderLoop;
         image = null;
         texture = null;
-        URL url = Sprite.class.getResource(path);
 
+        URL url = Sprite.class.getResource(path);
         try
         {
             image = ImageIO.read(new FileInputStream(path));
@@ -44,7 +46,7 @@ public class Sprite
 
         if (texture == null)
         {
-            texture = AWTTextureIO.newTexture(WindowRenderer.getInstance().getProfile(), image, true);
+            texture = AWTTextureIO.newTexture(renderLoop.getProfile(), image, true);
         }
 
         return texture;

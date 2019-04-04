@@ -4,26 +4,14 @@ import ch.kbw.utils.Point;
 
 public class View
 {
-    // Singleton
-    private static View instance;
-
-    // Attributes
     private Point position;
     private Point perspective;
 
-    private View()
+    public View()
     {
-        position = new Point(0, 0, 0);
-        perspective = new Point(0, 0, 0);
-    }
-
-    public static View getInstance()
-    {
-        if (instance == null)
-        {
-            instance = new View();
-        }
-        return instance;
+        // For testing
+        position = new Point(-50, -50, -50);
+        perspective = new Point(-80, 0, -180);
     }
 
     public Point getPosition()

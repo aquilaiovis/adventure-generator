@@ -1,33 +1,28 @@
 package ch.kbw.update;
 
+import ch.kbw.render.RenderLoop;
 import ch.kbw.utils.World;
-import ch.kbw.render.WindowRenderer;
 
 public class UpdateLoop
 {
-    private static UpdateLoop instance;
-    private boolean running;
+    private RenderLoop renderLoop;
+    private boolean running, paused;
     private int targetUpdateInterval, renderedFrames;
     private final int MAX_UPDATES = 5;
+    private World world;
 
-    private UpdateLoop()
+    public UpdateLoop(RenderLoop renderLoop)
     {
+        this.renderLoop = renderLoop;
         running = true;
+        paused = false;
         renderedFrames = 0;
+        world = new World(this);
     }
 
-    public static UpdateLoop getInstance()
+    public void startUpdateLoop()
     {
-        if (instance == null)
-        {
-            instance = new UpdateLoop();
-        }
-        return instance;
-    }
-
-    public void start()
-    {
-        targetUpdateInterval = 1000000000 / WindowRenderer.getInstance().getTargetFps();
+        targetUpdateInterval = 1000000000 / renderLoop.getTargetFps();
 
         Thread gameLoopThread = new Thread(() ->
         {
@@ -37,39 +32,42 @@ public class UpdateLoop
 
             while (running)
             {
-                long currentTime = System.nanoTime();
-
-                while (updates <= MAX_UPDATES && currentTime - lastUpdateTime >= targetUpdateInterval)
+                if (!paused)
                 {
-                    World.getInstance().update();
+                    long currentTime = System.nanoTime();
 
-                    // Not "lastUpdateTime = System.nanoTime()", so updates can catch up if they lack behind
-                    lastUpdateTime += targetUpdateInterval;
-
-                    updates++;
-                }
-                updates = 0;
-
-                WindowRenderer.getInstance().render();
-                renderedFrames++;
-                if (System.nanoTime() >= lastFpsCheck + 1000000000)
-                {
-                    System.out.println("\nFps: " + renderedFrames);
-
-                    renderedFrames = 0;
-                    lastFpsCheck = System.nanoTime();
-                }
-
-                long timeTaken = System.nanoTime() - currentTime;
-                if (targetUpdateInterval > timeTaken)
-                {
-                    try
+                    while (updates <= MAX_UPDATES && currentTime - lastUpdateTime >= targetUpdateInterval)
                     {
-                        Thread.sleep((targetUpdateInterval - timeTaken) / 1000000);
+                        world.update();
+
+                        // Not "lastUpdateTime = System.nanoTime()", so updates can catch up if they lack behind
+                        lastUpdateTime += targetUpdateInterval;
+
+                        updates++;
                     }
-                    catch (InterruptedException e)
+                    updates = 0;
+
+                    renderLoop.renderWindow();
+                    renderedFrames++;
+                    if (System.nanoTime() >= lastFpsCheck + 1000000000)
                     {
-                        e.printStackTrace();
+                        System.out.println("\nFps: " + renderedFrames);
+
+                        renderedFrames = 0;
+                        lastFpsCheck = System.nanoTime();
+                    }
+
+                    long timeTaken = System.nanoTime() - currentTime;
+                    if (targetUpdateInterval > timeTaken)
+                    {
+                        try
+                        {
+                            Thread.sleep((targetUpdateInterval - timeTaken) / 1000000);
+                        }
+                        catch (InterruptedException e)
+                        {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
@@ -81,5 +79,25 @@ public class UpdateLoop
     public float updateDifference()
     {
         return 1.0f / 1000000000 * targetUpdateInterval;
+    }
+
+    public boolean isPaused()
+    {
+        return paused;
+    }
+
+    public void setPaused(boolean paused)
+    {
+        this.paused = paused;
+    }
+
+    public RenderLoop getRenderLoop()
+    {
+        return renderLoop;
+    }
+
+    public World getWorld()
+    {
+        return world;
     }
 }

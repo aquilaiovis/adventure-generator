@@ -79,7 +79,8 @@ public class NoiseGenerator
         {
             for (int j = 0; j < WIDTH * y; j++)
             {
-                hlist.add(noise((i / (WIDTH * 1.0) * (12.2)) + seed, seed, (j / (WIDTH * 1.0) * (12.2)) + seed));
+                //hlist.add(noise((i / (WIDTH * 1.0) * (12.2)) + seed, seed, (j / (WIDTH * 1.0) * (12.2)) + seed));
+                hlist.add(noise((i * 1.0 / (WIDTH - x * 5.20) + 1.0) * i / WIDTH, seed, (j * 1.0 / (WIDTH - x * 5.20) + 1.0) * j / WIDTH));
             }
         }
         return hlist;
