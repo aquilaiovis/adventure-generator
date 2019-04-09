@@ -24,12 +24,21 @@ public class Player
     {
         handleOxygen();
         handleHealth();
+        handleWater();
+    }
+
+    private void handleStamina(){
+
+    }
+
+    private void handleWater(){
+        setWater(water-0.0005f);
     }
 
     private void handleOxygen()
     {
         // z is reversed
-        if (position.getZ() < 0)
+        if (position.getZ() < 0.0)
         {
             if (oxygen < 100)
             {
@@ -42,6 +51,7 @@ public class Player
             {
                 oxygen -= 0.1f;
             }
+            setWater(water+2.5f);
         }
     }
 
@@ -58,17 +68,19 @@ public class Player
                 health -= 0.5;
             }
             if(food<=20){
-                health -= 0.1;
+                setHealth(health-0.1f);
             }
             if(water<=30){
-                health -= 0.3;
+                setHealth(health-0.3f);
             }
         }
         if(health < 100){
             if(food >= 80){
                 health += 0.3;
+                setFood(food-0.025f);
             }else if(food >= 50){
                 health += 0.05;
+                setFood(food-0.045f);
             }
         }
     }
@@ -120,7 +132,13 @@ public class Player
     }
 
     public void setStamina(float stamina) {
-        this.stamina = stamina;
+        if (stamina > 100){
+            this.stamina = 100;
+        }else if (stamina < 0){
+            this.stamina = 0;
+        }else{
+            this.stamina = stamina;
+        }
     }
 
     public float getFood() {
@@ -128,7 +146,13 @@ public class Player
     }
 
     public void setFood(float food) {
-        this.food = food;
+        if (food > 100){
+            this.food = 100;
+        }else if (food < 0){
+            this.food = 0;
+        }else{
+            this.food = food;
+        }
     }
 
     public float getWater() {
@@ -136,7 +160,13 @@ public class Player
     }
 
     public void setWater(float water) {
-        this.water = water;
+        if (water > 100){
+            this.water = 100;
+        }else if (water < 0){
+            this.water = 0;
+        }else{
+            this.water = water;
+        }
     }
 
     public float getOxygen()

@@ -105,12 +105,12 @@ public class World
     {
         Point position = player.getPosition();
         float movementSpeed = 0.1f;
-        if(player.getStamina()<=50){
-            movementSpeed = movementSpeed / 2;
-        }else if(player.getStamina()<=20){
+        if(player.getStamina()<=20){
             movementSpeed = movementSpeed / 5;
+        }else if(player.getStamina()<=50){
+            movementSpeed = movementSpeed / 2;
         }
-        float floatingHeight = 1f;
+        float floatingHeight = 0.8f;
         float pZ = player.getPerspective().getZ();
         if (pZ < 0) {
             //Denn isch dumm gloffe...
@@ -127,37 +127,51 @@ public class World
         }else if(sector==3){//Stimmt
             vX = vX*-1;
             vY = vY*-1;
-        }else if(sector==2){
-            vY = vY*-1;
+        }else if(sector==2) {
+            vY = vY * -1;
         }
-
+        boolean isResting = true;
         if (keyInput.isPressed(KeyEvent.VK_SHIFT) && player.getStamina()>=60)
         {
             movementSpeed *= 2;
             player.setStamina(player.getStamina()-0.1f);
-        }
-        if (keyInput.isPressed(KeyEvent.VK_CONTROL))
+            player.setWater(player.getWater()-0.001f);
+        }else if (keyInput.isPressed(KeyEvent.VK_CONTROL))
         {
             movementSpeed /= 2;
+            player.setStamina(player.getStamina()+0.02f);
+            floatingHeight = 0.5f;
         }
         if (keyInput.isPressed(KeyEvent.VK_D))
         {
+            isResting = false;
             position.addToX(movementSpeed);
         }
         if (keyInput.isPressed(KeyEvent.VK_A))
         {
+            isResting = false;
             position.addToX(-movementSpeed);
         }
         if (keyInput.isPressed(KeyEvent.VK_W))
         {
+            isResting = false;
             position.addToX(movementSpeed*vY);
             position.addToY(movementSpeed*vX);
         }
         if (keyInput.isPressed(KeyEvent.VK_S))
         {
+            isResting = false;
             position.addToX(-(movementSpeed*vY));
             position.addToY(-(movementSpeed*vX));
         }
+        if(isResting&&
+                player.getFood()>=40&&
+                player.getOxygen()>=80&&
+                player.getWater()>=45&&
+                player.getHealth()>=60){
+            player.setStamina(player.getStamina()+0.12f);
+        }
+        player.setStamina(player.getStamina()-0.0075f);
 
         for (Point point : allPoints)
         {
