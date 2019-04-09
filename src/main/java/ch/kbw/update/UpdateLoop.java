@@ -5,10 +5,10 @@ import ch.kbw.utils.World;
 
 public class UpdateLoop
 {
+    private final int MAX_UPDATES = 5;
     private RenderLoop renderLoop;
     private boolean running, paused;
     private int targetUpdateInterval, renderedFrames;
-    private final int MAX_UPDATES = 5;
     private World world;
 
     public UpdateLoop(RenderLoop renderLoop)
@@ -32,42 +32,43 @@ public class UpdateLoop
 
             while (running)
             {
-                if (!paused)
-                {
-                    long currentTime = System.nanoTime();
+                long currentTime = System.nanoTime();
 
-                    while (updates <= MAX_UPDATES && currentTime - lastUpdateTime >= targetUpdateInterval)
+                while (updates <= MAX_UPDATES && currentTime - lastUpdateTime >= targetUpdateInterval)
+                {
+                    world.checkPaused();
+                    if (!paused)
                     {
                         world.update();
-
-                        // Not "lastUpdateTime = System.nanoTime()", so updates can catch up if they lack behind
-                        lastUpdateTime += targetUpdateInterval;
-
-                        updates++;
-                    }
-                    updates = 0;
-
-                    renderLoop.renderWindow();
-                    renderedFrames++;
-                    if (System.nanoTime() >= lastFpsCheck + 1000000000)
-                    {
-                        System.out.println("\nFps: " + renderedFrames);
-
-                        renderedFrames = 0;
-                        lastFpsCheck = System.nanoTime();
                     }
 
-                    long timeTaken = System.nanoTime() - currentTime;
-                    if (targetUpdateInterval > timeTaken)
+                    // Not "lastUpdateTime = System.nanoTime()", so updates can catch up if they lack behind
+                    lastUpdateTime += targetUpdateInterval;
+
+                    updates++;
+                }
+                updates = 0;
+
+                renderLoop.renderWindow();
+                renderedFrames++;
+                if (System.nanoTime() >= lastFpsCheck + 1000000000)
+                {
+                    System.out.println("\nFps: " + renderedFrames);
+
+                    renderedFrames = 0;
+                    lastFpsCheck = System.nanoTime();
+                }
+
+                long timeTaken = System.nanoTime() - currentTime;
+                if (targetUpdateInterval > timeTaken)
+                {
+                    try
                     {
-                        try
-                        {
-                            Thread.sleep((targetUpdateInterval - timeTaken) / 1000000);
-                        }
-                        catch (InterruptedException e)
-                        {
-                            e.printStackTrace();
-                        }
+                        Thread.sleep((targetUpdateInterval - timeTaken) / 1000000);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        e.printStackTrace();
                     }
                 }
             }

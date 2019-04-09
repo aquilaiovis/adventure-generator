@@ -3,10 +3,12 @@ package ch.kbw.utils;
 import ch.kbw.input.KeyInput;
 import ch.kbw.input.MouseInput;
 import ch.kbw.render.RenderLoop;
+import ch.kbw.render.Sprite;
 import ch.kbw.update.NoiseGenerator;
+import ch.kbw.update.Player;
 import ch.kbw.update.UpdateLoop;
+import ch.kbw.update.View;
 import com.jogamp.newt.event.KeyEvent;
-
 import java.util.ArrayList;
 
 public class World
@@ -15,17 +17,25 @@ public class World
     private RenderLoop renderLoop;
     private KeyInput keyInput;
     private MouseInput mouseInput;
+    private View view;
+    private Player player;
     private ArrayList<Point> allPoints;
     private int chunksX, chunksY;
     private int chunkPointsPerSide;
+    private Sprite grass;
+    private Sprite water;
 
     public World(UpdateLoop updateLoop)
     {
         this.updateLoop = updateLoop;
         renderLoop = updateLoop.getRenderLoop();
+        player = new Player(new Point(-50, -50, -50), new Point(-80, 0, -180));
+        view = new View(player.getPosition(), player.getPerspective());
         keyInput = renderLoop.getKeyInput();
         mouseInput = renderLoop.getMouseInput();
         NoiseGenerator noiseGenerator = new NoiseGenerator();
+        grass = new Sprite(renderLoop, "res/minegrass.jpg");
+        water = new Sprite(renderLoop, "res/minewater.jpg");
 
         chunksX = 1;
         chunksY = 1;
@@ -44,11 +54,87 @@ public class World
         }
     }
 
-    public void update()
+    public void checkPaused()
     {
         if (keyInput.isPressed(KeyEvent.VK_ESCAPE))
         {
             updateLoop.setPaused(!updateLoop.isPaused());
+        }
+    }
+
+    public void update()
+    {
+        handlePlayerRotation();
+        handlePlayerMovement();
+        player.update();
+    }
+
+    private void handlePlayerRotation()
+    {
+        Point perspective = player.getPerspective();
+        float rotationSpeed = 0.5f;
+        if (keyInput.isPressed(KeyEvent.VK_NUMPAD2))
+        {
+            perspective.addToX(rotationSpeed);
+        }
+        if (keyInput.isPressed(KeyEvent.VK_NUMPAD8))
+        {
+            perspective.addToX(-rotationSpeed);
+        }
+        if (keyInput.isPressed(KeyEvent.VK_NUMPAD7))
+        {
+            perspective.addToY(rotationSpeed);
+        }
+        if (keyInput.isPressed(KeyEvent.VK_NUMPAD9))
+        {
+            perspective.addToY(-rotationSpeed);
+        }
+        if (keyInput.isPressed(KeyEvent.VK_NUMPAD4))
+        {
+            perspective.addToZ(-rotationSpeed);
+        }
+        if (keyInput.isPressed(KeyEvent.VK_NUMPAD6))
+        {
+            perspective.addToZ(rotationSpeed);
+        }
+    }
+
+    private void handlePlayerMovement()
+    {
+        Point position = player.getPosition();
+        float movementSpeed = 0.1f;
+        float floatingHeight = 1f;
+        if (keyInput.isPressed(KeyEvent.VK_SHIFT))
+        {
+            movementSpeed *= 2;
+        }
+        if (keyInput.isPressed(KeyEvent.VK_CONTROL))
+        {
+            movementSpeed /= 2;
+        }
+        if (keyInput.isPressed(KeyEvent.VK_D))
+        {
+            position.addToX(movementSpeed);
+        }
+        if (keyInput.isPressed(KeyEvent.VK_A))
+        {
+            position.addToX(-movementSpeed);
+        }
+        if (keyInput.isPressed(KeyEvent.VK_W))
+        {
+            position.addToY(movementSpeed);
+        }
+        if (keyInput.isPressed(KeyEvent.VK_S))
+        {
+            position.addToY(-movementSpeed);
+        }
+
+        for (Point point : allPoints)
+        {
+            if (point.getX() == ((int) position.getX() * -1) && point.getY() == ((int) position.getY() * -1))
+            {
+                position.setZ(-((point.getZ() + floatingHeight) * 10));
+            }
         }
     }
 
@@ -70,5 +156,25 @@ public class World
     public int getChunkPointsPerSide()
     {
         return chunkPointsPerSide;
+    }
+
+    public Sprite getGrass()
+    {
+        return grass;
+    }
+
+    public Sprite getWater()
+    {
+        return water;
+    }
+
+    public View getView()
+    {
+        return view;
+    }
+
+    public Player getPlayer()
+    {
+        return player;
     }
 }

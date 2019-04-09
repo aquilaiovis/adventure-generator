@@ -1,4 +1,4 @@
-package ch.kbw.render;
+package ch.kbw.update;
 
 import ch.kbw.utils.Point;
 
@@ -7,11 +7,10 @@ public class View
     private Point position;
     private Point perspective;
 
-    public View()
+    public View(Point position, Point perspective)
     {
-        // For testing
-        position = new Point(-50, -50, -50);
-        perspective = new Point(-80, 0, -180);
+        this.position = position;
+        this.perspective = perspective;
     }
 
     public Point getPosition()

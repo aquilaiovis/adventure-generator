@@ -2,18 +2,17 @@ package ch.kbw.render;
 
 import ch.kbw.input.KeyInput;
 import ch.kbw.input.MouseInput;
+import ch.kbw.update.View;
 import ch.kbw.utils.Point;
 import ch.kbw.utils.World;
 import com.jogamp.newt.opengl.GLWindow;
 import com.jogamp.opengl.*;
 import com.jogamp.opengl.glu.GLU;
 import com.jogamp.opengl.util.FPSAnimator;
+import com.jogamp.opengl.util.awt.TextRenderer;
 import com.jogamp.opengl.util.texture.Texture;
-import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.FileInputStream;
+import java.awt.*;
 import java.util.ArrayList;
 
 public class RenderLoop implements GLEventListener
@@ -30,9 +29,8 @@ public class RenderLoop implements GLEventListener
     private KeyInput keyInput;
     private MouseInput mouseInput;
 
-    private GLU glu;
-    private int textureNumber;
     private GL2 gl;
+    private GLU glu;
 
     private View view;
 
@@ -48,7 +46,8 @@ public class RenderLoop implements GLEventListener
         // Increase flexibility by measuring in units instead of pixels
         this.windowWidthInUnits = windowWidthInUnits;
 
-        this.view = new View();
+        // Make a temporary view to initialize the rendering
+        view = new View(new Point(0, 0, 0), new Point(0, 0, 0));
 
         initWindowRenderer();
     }
@@ -88,28 +87,21 @@ public class RenderLoop implements GLEventListener
 
         gl.setSwapInterval(0);
 
-        // For transparency of sprites
-        // gl.glEnable(GL2.GL_BLEND);
-        // gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
+        // Enable transparency of sprites
+        gl.glEnable(GL2.GL_BLEND);
+        gl.glBlendFunc(GL2.GL_SRC_ALPHA, GL2.GL_ONE_MINUS_SRC_ALPHA);
 
         gl.glShadeModel(GL2.GL_SMOOTH);
+
+        // Set the clearing colour
         gl.glClearColor(0f, 0f, 0f, 0f);
         gl.glClearDepth(1.0f);
         gl.glEnable(GL2.GL_DEPTH_TEST);
         gl.glDepthFunc(GL2.GL_LEQUAL);
         gl.glHint(GL2.GL_PERSPECTIVE_CORRECTION_HINT, GL2.GL_NICEST);
 
+        // Enable textures
         gl.glEnable(GL2.GL_TEXTURE_2D);
-        try
-        {
-            BufferedImage image = ImageIO.read(new FileInputStream("res/minegrass.jpg"));
-            Texture texture = AWTTextureIO.newTexture(this.getProfile(), image, true);
-            textureNumber = texture.getTextureObject(gl);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
     }
 
     private void updateGL2(GLAutoDrawable drawable)
@@ -157,9 +149,19 @@ public class RenderLoop implements GLEventListener
         // Reset the View
         gl.glLoadIdentity();
 
-        moveView();
+        Point perspective = view.getPerspective();
+        gl.glRotatef(perspective.getX(), 1, 0, 0);
+        gl.glRotatef(perspective.getY(), 0, 1, 0);
+        gl.glRotatef(perspective.getZ(), 0, 0, 1);
+        Point position = view.getPosition();
+        gl.glTranslatef(position.getX(), position.getY(), position.getZ());
 
-        renderWorld();
+        if (world != null)
+        {
+            view = world.getView();
+            renderWorld();
+            renderUserInterface();
+        }
     }
 
     @Override
@@ -198,9 +200,12 @@ public class RenderLoop implements GLEventListener
         int pointFieldWidth = world.getChunkPointsPerSide() * world.getChunksX();
         int pointFieldHeight = world.getChunkPointsPerSide() * world.getChunksY();
 
-        gl.glBindTexture(GL2.GL_TEXTURE_2D, this.getTextureNumber());
+        Texture grassTexture = world.getGrass().getTexture();
+        if (grassTexture != null)
+        {
+            gl.glBindTexture(GL2.GL_TEXTURE_2D, grassTexture.getTextureObject());
+        }
         gl.glBegin(GL2.GL_TRIANGLES);
-
         int heightMultiplier = 10;
         for (int i = 0; i < points.size() - pointFieldWidth - 1; i++)
         {
@@ -221,7 +226,6 @@ public class RenderLoop implements GLEventListener
                 gl.glTexCoord2f(0.5f, 1.0f);
                 gl.glVertex3f(points.get(i + pointFieldWidth).getX(), points.get(i + pointFieldWidth).getY(), points.get(i + pointFieldWidth).getZ() * heightMultiplier);
             }
-
             if (getLength(points.get(i + 1).getX() - points.get(i + pointFieldWidth).getX(), points.get(i + 1).getY() - points.get(i + pointFieldWidth).getY()) < 2
                     && getLength(points.get(i + pointFieldWidth).getX() - points.get(i + pointFieldWidth + 1).getX(), points.get(i + pointFieldWidth).getY() - points.get(i + pointFieldWidth + 1).getY()) < 2
                     && getLength(points.get(i + pointFieldWidth + 1).getX() - points.get(i + 1).getX(), points.get(i + pointFieldWidth + 1).getY() - points.get(i + 1).getY()) < 2)
@@ -234,27 +238,17 @@ public class RenderLoop implements GLEventListener
                 gl.glTexCoord2f(0.5f, 1.0f);
                 gl.glVertex3f(points.get(i + pointFieldWidth + 1).getX(), points.get(i + pointFieldWidth + 1).getY(), points.get(i + pointFieldWidth + 1).getZ() * heightMultiplier);
             }
-
         }
-
-        // Finish drawing
         gl.glEnd();
-
         gl.glFlush();
 
-
-        /*Sprite sprite = new Sprite(this, "res/minewater.jpg");
-        Texture texture = sprite.getTexture();
-
-        if (texture != null)
+        Texture waterTexture = world.getWater().getTexture();
+        if (waterTexture != null)
         {
-            gl.glBindTexture(GL2.GL_TEXTURE_2D, texture.getTextureObject());
+            gl.glBindTexture(GL2.GL_TEXTURE_2D, waterTexture.getTextureObject());
         }
-
-        gl.glBindTexture(GL2.GL_TEXTURE_2D, 0);*/
-
         // Todo: Make water transparent
-        setColor(0, 0.5f, 1, 1);
+        setColor(0, 0.5f, 1, 0.9f);
         gl.glBegin(GL2.GL_QUADS);
         gl.glTexCoord2f(0, 0);
         gl.glVertex2f(0, 0);
@@ -266,44 +260,17 @@ public class RenderLoop implements GLEventListener
         gl.glVertex2f(0, 100);
         gl.glEnd();
         gl.glFlush();
-
-        gl.glBindTexture(GL2.GL_TEXTURE_2D, 0);
     }
 
-    public void drawSprite(Sprite sprite, Point center, float rotation, float width, float height)
+    private void renderUserInterface()
     {
-        Texture texture = sprite.getTexture();
-
-        if (texture != null)
-        {
-            gl.glBindTexture(GL2.GL_TEXTURE_2D, texture.getTextureObject());
-        }
-
-        // Make the center the reference point for further transformations
-        gl.glTranslatef(center.getX(), center.getY(), 0);
-
-        // Make rotation negative so it is as one is used from mathematics
-        gl.glRotatef(-rotation, 0, 0, 1);
-
-        gl.glBegin(GL2.GL_QUADS);
-        gl.glTexCoord2f(0, 0);
-        gl.glVertex2f(-width / 2, -height / 2);
-        gl.glTexCoord2f(1, 0);
-        gl.glVertex2f(width / 2, -height / 2);
-        gl.glTexCoord2f(1, 1);
-        gl.glVertex2f(width / 2, height / 2);
-        gl.glTexCoord2f(0, 1);
-        gl.glVertex2f(-width / 2, height / 2);
-        gl.glEnd();
-        gl.glFlush();
-
-        gl.glBindTexture(GL2.GL_TEXTURE_2D, 0);
-
-        // Reset rotation as it will rotate again whenever this method is called
-        gl.glRotatef(rotation, 0, 0, 1);
-
-        // Reset the reference point as it will set it where it was again whenever this method is called
-        gl.glTranslatef(-center.getX(), -center.getY(), 0);
+        TextRenderer textRenderer = new TextRenderer(new Font("Verdana", Font.BOLD, 16));
+        textRenderer.beginRendering(900, 700);
+        textRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+        textRenderer.setSmoothing(true);
+        textRenderer.draw("O2: " + (int) world.getPlayer().getOxygen()
+                + "%          Health: " + (int) world.getPlayer().getHealth(), 10, 10);
+        textRenderer.endRendering();
     }
 
     private float getLength(double xDifference, double yDifference)
@@ -317,70 +284,6 @@ public class RenderLoop implements GLEventListener
             yDifference *= -1;
         }
         return (float) Math.sqrt(xDifference * xDifference + yDifference * yDifference);
-    }
-
-    private void moveView()
-    {
-        Point perspective = view.getPerspective();
-        gl.glRotatef(perspective.getX(), 1, 0, 0);
-        gl.glRotatef(perspective.getY(), 0, 1, 0);
-        gl.glRotatef(perspective.getZ(), 0, 0, 1);
-        float rotationSpeed = 0.5f;
-        if (keyInput.isPressed(com.jogamp.newt.event.KeyEvent.VK_NUMPAD2))
-        {
-            perspective.addToX(rotationSpeed);
-        }
-        if (keyInput.isPressed(com.jogamp.newt.event.KeyEvent.VK_NUMPAD8))
-        {
-            perspective.addToX(-rotationSpeed);
-        }
-        if (keyInput.isPressed(com.jogamp.newt.event.KeyEvent.VK_NUMPAD7))
-        {
-            perspective.addToY(rotationSpeed);
-        }
-        if (keyInput.isPressed(com.jogamp.newt.event.KeyEvent.VK_NUMPAD9))
-        {
-            perspective.addToY(-rotationSpeed);
-        }
-        if (keyInput.isPressed(com.jogamp.newt.event.KeyEvent.VK_NUMPAD4))
-        {
-            perspective.addToZ(-rotationSpeed);
-        }
-        if (keyInput.isPressed(com.jogamp.newt.event.KeyEvent.VK_NUMPAD6))
-        {
-            perspective.addToZ(rotationSpeed);
-        }
-
-        Point position = view.getPosition();
-
-        float movementSpeed = 0.1f;
-        float floatingHeight = 1f;
-        if (keyInput.isPressed(com.jogamp.newt.event.KeyEvent.VK_D))
-        {
-            position.addToX(movementSpeed);
-        }
-        if (keyInput.isPressed(com.jogamp.newt.event.KeyEvent.VK_A))
-        {
-            position.addToX(-movementSpeed);
-        }
-        if (keyInput.isPressed(com.jogamp.newt.event.KeyEvent.VK_W))
-        {
-            position.addToY(movementSpeed);
-        }
-        if (keyInput.isPressed(com.jogamp.newt.event.KeyEvent.VK_S))
-        {
-            position.addToY(-movementSpeed);
-        }
-
-        for (Point point : world.getAllPoints())
-        {
-            if (point.getX() == ((int) position.getX() * -1) && point.getY() == ((int) position.getY() * -1))
-            {
-                position.setZ(-((point.getZ() + floatingHeight) * 10));
-            }
-        }
-
-        gl.glTranslatef(position.getX(), position.getY(), position.getZ());
     }
 
     private void setColor(float red, float green, float blue, float alpha)
@@ -422,11 +325,6 @@ public class RenderLoop implements GLEventListener
         return window.getWidth() / windowWidthInUnits;
     }
 
-    private int getTextureNumber()
-    {
-        return textureNumber;
-    }
-
     public GLProfile getProfile()
     {
         return profile;
@@ -450,5 +348,10 @@ public class RenderLoop implements GLEventListener
     public void setWorld(World world)
     {
         this.world = world;
+    }
+
+    public View getView()
+    {
+        return view;
     }
 }
