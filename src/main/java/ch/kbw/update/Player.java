@@ -6,7 +6,7 @@ public class Player
 {
     private Point position;
     private Point perspective;
-    private float oxygen, health;
+    private float oxygen, health, food, water, stamina;
 
     public Player(Point position, Point perspective)
     {
@@ -15,6 +15,9 @@ public class Player
 
         oxygen = 100;
         health = 100;
+        food = 100;
+        water = 100;
+        stamina = 100;
     }
 
     public void update()
@@ -48,11 +51,24 @@ public class Player
         {
             if (oxygen < 20.0)
             {
-                health -= 1;
+                health -= 0.75;
             }
             else if (oxygen < 50.0)
             {
                 health -= 0.5;
+            }
+            if(food<=20){
+                health -= 0.1;
+            }
+            if(water<=30){
+                health -= 0.3;
+            }
+        }
+        if(health < 100){
+            if(food >= 80){
+                health += 0.3;
+            }else if(food >= 50){
+                health += 0.05;
             }
         }
     }
@@ -97,6 +113,30 @@ public class Player
             this.health = health;
         }
 
+    }
+
+    public float getStamina() {
+        return stamina;
+    }
+
+    public void setStamina(float stamina) {
+        this.stamina = stamina;
+    }
+
+    public float getFood() {
+        return food;
+    }
+
+    public void setFood(float food) {
+        this.food = food;
+    }
+
+    public float getWater() {
+        return water;
+    }
+
+    public void setWater(float water) {
+        this.water = water;
     }
 
     public float getOxygen()

@@ -269,7 +269,10 @@ public class RenderLoop implements GLEventListener
         textRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
         textRenderer.setSmoothing(true);
         textRenderer.draw("O2: " + (int) world.getPlayer().getOxygen()
-                + "%          Health: " + (int) world.getPlayer().getHealth(), 10, 10);
+                + "%          Food: " + (int) world.getPlayer().getFood()
+                + "%          Water: " + (int) world.getPlayer().getWater()
+                + "%          Health: " + (int) world.getPlayer().getHealth()
+                + "%          Stamina: " + (int) world.getPlayer().getStamina() + "%", 10, 10);
         textRenderer.endRendering();
     }
 

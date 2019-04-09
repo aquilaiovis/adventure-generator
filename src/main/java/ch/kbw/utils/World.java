@@ -72,8 +72,8 @@ public class World
     private void handlePlayerRotation()
     {
         Point perspective = player.getPerspective();
-        perspective.addToX(mouseInput.getvY()/10);
-        perspective.addToZ(mouseInput.getvX()/10);
+        perspective.addToX(-(mouseInput.getvY()/10));
+        perspective.addToZ(-(mouseInput.getvX()/10));
         float rotationSpeed = 0.5f;
         if (keyInput.isPressed(KeyEvent.VK_NUMPAD2))
         {
@@ -105,6 +105,11 @@ public class World
     {
         Point position = player.getPosition();
         float movementSpeed = 0.1f;
+        if(player.getStamina()<=50){
+            movementSpeed = movementSpeed / 2;
+        }else if(player.getStamina()<=20){
+            movementSpeed = movementSpeed / 5;
+        }
         float floatingHeight = 1f;
         float pZ = player.getPerspective().getZ();
         if (pZ < 0) {
@@ -126,9 +131,10 @@ public class World
             vY = vY*-1;
         }
 
-        if (keyInput.isPressed(KeyEvent.VK_SHIFT))
+        if (keyInput.isPressed(KeyEvent.VK_SHIFT) && player.getStamina()>=60)
         {
             movementSpeed *= 2;
+            player.setStamina(player.getStamina()-0.1f);
         }
         if (keyInput.isPressed(KeyEvent.VK_CONTROL))
         {
