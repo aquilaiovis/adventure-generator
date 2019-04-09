@@ -9,6 +9,7 @@ public class MouseInput implements MouseListener
     private float mouseX, mouseY;
     private boolean[] buttons;
     private float pixelsPerUnit, windowWidth, windowHeight;
+    private float vX, vY;
 
     public MouseInput(float pixelsPerUnit, float windowWidth, float windowHeight)
     {
@@ -55,9 +56,10 @@ public class MouseInput implements MouseListener
 
     public void mouseMoved(MouseEvent e)
     {
-        // Todo: Update this
-        mouseX = e.getX() / pixelsPerUnit - windowWidth / 2;
-        mouseY = -(e.getY() / pixelsPerUnit) + windowHeight;
+        vX += mouseX - e.getX();
+        vY += mouseY - e.getY();
+        mouseX = e.getX();
+        mouseY = e.getY();
     }
 
     public void mouseDragged(MouseEvent e)
@@ -68,6 +70,20 @@ public class MouseInput implements MouseListener
     public void mouseWheelMoved(MouseEvent e)
     {
 
+    }
+
+    public float getvX()
+    {
+        float x = vX;
+        vX = 0;
+        return x;
+    }
+
+    public float getvY()
+    {
+        float y = vY;
+        vY = 0;
+        return y;
     }
 
     public float getMouseX()
