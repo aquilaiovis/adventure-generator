@@ -2,6 +2,8 @@ package ch.kbw.utils;
 
 import ch.kbw.input.KeyInput;
 import ch.kbw.input.MouseInput;
+import ch.kbw.multiplayer.Client;
+import ch.kbw.packet.PacketSeed;
 import ch.kbw.render.RenderLoop;
 import ch.kbw.render.Sprite;
 import ch.kbw.update.NoiseGenerator;
@@ -10,6 +12,7 @@ import ch.kbw.update.UpdateLoop;
 import ch.kbw.update.View;
 import com.jogamp.newt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.Random;
 
 public class World
 {
@@ -24,6 +27,11 @@ public class World
     private int chunkPointsPerSide;
     private Sprite grass;
     private Sprite water;
+    private NoiseGenerator noiseGenerator;
+    private Client client;
+    private double seed = 0;
+    private boolean isServer = false;
+    private boolean multiplayer = true;
 
     public World(UpdateLoop updateLoop)
     {
@@ -33,7 +41,7 @@ public class World
         view = new View(player.getPosition(), player.getPerspective());
         keyInput = renderLoop.getKeyInput();
         mouseInput = renderLoop.getMouseInput();
-        NoiseGenerator noiseGenerator = new NoiseGenerator();
+        noiseGenerator = new NoiseGenerator();
         grass = new Sprite(renderLoop, "res/minegrass.jpg");
         water = new Sprite(renderLoop, "res/minewater.jpg");
 
@@ -42,16 +50,34 @@ public class World
         chunkPointsPerSide = 100;
 
         // Todo: Fix arguments
-        ArrayList<Double> heights = noiseGenerator.getHeights(chunksX, chunksY);
+        if(!multiplayer) {
+            Random r = new Random();
+            seed = r.nextDouble() + 1;
+            ArrayList<Double> heights = noiseGenerator.getHeights(chunksX, chunksY, seed);
+            allPoints = new ArrayList<>();
+
+            for (int x = 0; x < chunksX * chunkPointsPerSide; x++) {
+                for (int y = 0; y < chunksY * chunkPointsPerSide; y++) {
+                    allPoints.add(new Point((float) x, (float) y, Float.parseFloat(Double.toString(heights.get(x * chunksX * chunkPointsPerSide + y))) * 5));
+                }
+            }
+        }
+    }
+
+    public void generateWorld(){
+        while(seed==0){}
+        ArrayList<Double> heights = noiseGenerator.getHeights(chunksX, chunksY, seed);
         allPoints = new ArrayList<>();
 
-        for (int x = 0; x < chunksX * chunkPointsPerSide; x++)
-        {
-            for (int y = 0; y < chunksY * chunkPointsPerSide; y++)
-            {
+        for (int x = 0; x < chunksX * chunkPointsPerSide; x++) {
+            for (int y = 0; y < chunksY * chunkPointsPerSide; y++) {
                 allPoints.add(new Point((float) x, (float) y, Float.parseFloat(Double.toString(heights.get(x * chunksX * chunkPointsPerSide + y))) * 5));
             }
         }
+    }
+
+    public void setSeed(double seed) {
+        this.seed = seed;
     }
 
     public void checkPaused()
@@ -120,7 +146,7 @@ public class World
         int sector = (int)(pZ/90);
         float vX = (pZ%90)/90;
         float vY = -vX+1;
-        System.out.println(sector);
+        //System.out.println(sector);
 
         if(sector==0){
             vX = vX*-1;
@@ -220,5 +246,22 @@ public class World
     public Player getPlayer()
     {
         return player;
+    }
+
+    public void setClient(Client client) {
+        this.client = client;
+        client.getHandlePacket().setWorld(this);
+    }
+
+    public boolean isServer() {
+        return isServer;
+    }
+
+    public boolean isMultiplayer() {
+        return multiplayer;
+    }
+
+    public double getSeed() {
+        return seed;
     }
 }

@@ -69,10 +69,10 @@ public class NoiseGenerator
         return ((h & 1) == 0 ? u : -u) + ((h & 2) == 0 ? v : -v);
     }
 
-    public ArrayList<Double> getHeights(int x, int y)
+    public ArrayList<Double> getHeights(int x, int y, double seed)
     {
         Random r = new Random();
-        double seed = r.nextDouble() + 1;
+
         ArrayList<Double> hlist = new ArrayList();
 
         for (int i = 0; i < WIDTH * x; i++)

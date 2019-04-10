@@ -196,6 +196,7 @@ public class RenderLoop implements GLEventListener
 
     private void renderWorld()
     {
+        if(world.getSeed()==0)return;
         ArrayList<Point> points = world.getAllPoints();
         int pointFieldWidth = world.getChunkPointsPerSide() * world.getChunksX();
         int pointFieldHeight = world.getChunkPointsPerSide() * world.getChunksY();
