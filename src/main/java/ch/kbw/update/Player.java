@@ -2,10 +2,16 @@ package ch.kbw.update;
 
 import ch.kbw.utils.Point;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.UnknownHostException;
+
 public class Player
 {
     private Point position;
     private Point perspective;
+    private int id;
     private float oxygen, health, food, water, stamina;
 
     public Player(Point position, Point perspective)
@@ -188,5 +194,13 @@ public class Player
         {
             this.oxygen = oxygen;
         }
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 }

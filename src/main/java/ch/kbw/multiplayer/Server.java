@@ -1,9 +1,8 @@
 package ch.kbw.multiplayer;
 
 import ch.kbw.packet.Packet;
+import ch.kbw.packet.PacketRegisterUser;
 import ch.kbw.packet.PacketSeed;
-import ch.kbw.render.RenderLoop;
-import ch.kbw.update.UpdateLoop;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -24,7 +23,7 @@ public class Server implements Runnable {
     private ServerSocketChannel channel;
     private ArrayList<Packet> queue;
 
-    private HashMap<SocketAddress, SocketChannel> clients;
+    private HashMap<SocketAddress, ServerMember> clients;
 
     private int port;
     private boolean running = false;
@@ -50,7 +49,7 @@ public class Server implements Runnable {
         this.seed = seed;
     }
 
-    public HashMap<SocketAddress, SocketChannel> getClients() {
+    public HashMap<SocketAddress, ServerMember> getClients() {
         return clients;
     }
 
@@ -91,8 +90,20 @@ public class Server implements Runnable {
                                 sChannel.register(selector, SelectionKey.OP_READ);
 
                                 //Seed versenden
-                                PacketSeed ps = new PacketSeed(seed);
-                                clients.put(sChannel.getRemoteAddress(), sChannel);
+                                PacketSeed ps = new PacketSeed(seed, r.nextInt());
+                                PacketRegisterUser pru = new PacketRegisterUser(ps.getId());
+                                for (SocketAddress a : clients.keySet()) {
+                                    if (!a.equals(clients.get(sChannel))) {
+                                        pru.addTarget(a);
+                                    }
+                                }
+                                queuePacket(pru);
+                                for(ServerMember sm : clients.values()) {
+                                    pru = new PacketRegisterUser(sm.getId());
+                                    ps.addTarget(sChannel.getRemoteAddress());
+                                    queuePacket(pru);
+                                }
+                                clients.put(sChannel.getRemoteAddress(), new ServerMember(sChannel, ps.getId()));
                                 ps.addTarget(sChannel.getRemoteAddress());
                                 queuePacket(ps);
                             } catch (ClosedChannelException ex) {
@@ -109,8 +120,8 @@ public class Server implements Runnable {
 
                             Packet packet = Packet.decompilePacket(readBuffer);
                             packet.clearTargets();
-                            for(SocketAddress a : clients.keySet()){
-                                if(!a.equals(clients.get(sChannel))){
+                            for (SocketAddress a : clients.keySet()) {
+                                if (!a.equals(clients.get(sChannel))) {
                                     packet.addTarget(a);
                                 }
                             }
@@ -135,7 +146,7 @@ public class Server implements Runnable {
                         while (targetIterator.hasNext()) {
                             SocketAddress target = targetIterator.next();
                             System.out.println(target);
-                            clients.get(target).write(writeBuffer);
+                            clients.get(target).getSocketChannel().write(writeBuffer);
                             writeBuffer.flip();
                         }
 

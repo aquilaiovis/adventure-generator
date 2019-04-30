@@ -2,6 +2,7 @@ package ch.kbw.render;
 
 import ch.kbw.input.KeyInput;
 import ch.kbw.input.MouseInput;
+import ch.kbw.update.Player;
 import ch.kbw.update.View;
 import ch.kbw.utils.Point;
 import ch.kbw.utils.World;
@@ -208,6 +209,7 @@ public class RenderLoop implements GLEventListener
         }
         gl.glBegin(GL2.GL_TRIANGLES);
         int heightMultiplier = 10;
+        if(points==null)return;
         for (int i = 0; i < points.size() - pointFieldWidth - 1; i++)
         {
             float colourModifier = 0.30f + points.get(i).getZ();
@@ -261,6 +263,18 @@ public class RenderLoop implements GLEventListener
         gl.glVertex2f(0, 100);
         gl.glEnd();
         gl.glFlush();
+
+        gl.glBegin(GL2.GL_TRIANGLES);
+        for(Player player : world.getPlayers())
+        {
+            setColor(1f, 0f, 0f, 1f);
+            Point position = player.getPosition();
+            gl.glVertex3f(-position.getX(), -position.getY(), -position.getZ()+10);
+            gl.glVertex3f(-position.getX()-10, -position.getY(), position.getZ());
+            gl.glVertex3f(-position.getX(), -position.getY()-10, position.getZ()+5);
+        }
+        gl.glEnd();
+        gl.glFlush();
     }
 
     private void renderUserInterface()
@@ -269,11 +283,11 @@ public class RenderLoop implements GLEventListener
         textRenderer.beginRendering(900, 700);
         textRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
         textRenderer.setSmoothing(true);
-        textRenderer.draw("O2: " + (int) world.getPlayer().getOxygen()
-                + "%          Food: " + (int) world.getPlayer().getFood()
-                + "%          Water: " + (int) world.getPlayer().getWater()
-                + "%          Health: " + (int) world.getPlayer().getHealth()
-                + "%          Stamina: " + (int) world.getPlayer().getStamina() + "%", 10, 10);
+        textRenderer.draw("O2: " + (int) world.getControlledPlayer().getOxygen()
+                + "%          Food: " + (int) world.getControlledPlayer().getFood()
+                + "%          Water: " + (int) world.getControlledPlayer().getWater()
+                + "%          Health: " + (int) world.getControlledPlayer().getHealth()
+                + "%          Stamina: " + (int) world.getControlledPlayer().getStamina() + "%", 10, 10);
         textRenderer.endRendering();
     }
 

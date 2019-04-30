@@ -2,19 +2,13 @@ package ch.kbw.packet;
 
 import java.nio.ByteBuffer;
 
-public class PacketSeed extends Packet {
-    private double seed;
+public class PacketRegisterUser extends Packet {
     private int id;
 
-    public PacketSeed(){}
+    public PacketRegisterUser(){}
 
-    public PacketSeed(double seed, int id) {
-        this.seed = seed;
+    public PacketRegisterUser(int id) {
         this.id = id;
-    }
-
-    public double getSeed() {
-        return seed;
     }
 
     public int getId() {
@@ -23,13 +17,11 @@ public class PacketSeed extends Packet {
 
     @Override
     public void serialize(ByteBuffer buffer) {
-        buffer.putDouble(seed);
         buffer.putInt(id);
     }
 
     @Override
     public void deserialize(ByteBuffer buffer) {
-        seed = buffer.getDouble();
         id = buffer.getInt();
     }
 }
