@@ -2,10 +2,14 @@ package ch.kbw.render;
 
 import ch.kbw.input.KeyInput;
 import ch.kbw.input.MouseInput;
+import ch.kbw.multiplayer.Client;
+import ch.kbw.multiplayer.Server;
 import ch.kbw.update.Player;
+import ch.kbw.update.UpdateLoop;
 import ch.kbw.update.View;
 import ch.kbw.utils.Point;
 import ch.kbw.utils.World;
+import com.jogamp.newt.event.MouseEvent;
 import com.jogamp.newt.opengl.GLWindow;
 import com.jogamp.opengl.*;
 import com.jogamp.opengl.glu.GLU;
@@ -14,59 +18,89 @@ import com.jogamp.opengl.util.awt.TextRenderer;
 import com.jogamp.opengl.util.texture.Texture;
 
 import java.awt.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 public class RenderLoop implements GLEventListener
 {
-    private World world;
-    private GLWindow window;
     private GLProfile profile;
-    private boolean resizable;
+    private GL2 gl;
+    private GLU glu;
+
     // Todo: Read target-fps, fullscreen and size preferences from user settings
+    private GLWindow window;
+    private boolean resizable;
     private int targetFps, windowWidthInPixels, windowHeightInPixels;
     private boolean fullscreen;
-    private float windowWidthInUnits;
+    private float windowWidthInUnits, windowHeightInUnits, fontSizeInUnits;
+    private TextRenderer mainMenuTitleRenderer, buttonLabelRenderer;
+    private String mainMenuTitle;
+    private Button[] buttons;
+    private boolean isPlaying;
+
+    private World world;
+    private View view;
 
     private KeyInput keyInput;
     private MouseInput mouseInput;
 
-    private GL2 gl;
-    private GLU glu;
-
-    private View view;
-
-    public RenderLoop(int targetFps, int windowWidthInPixels, int windowHeightInPixels, boolean fullscreen, boolean resizable, float windowWidthInUnits)
+    public RenderLoop(int targetFps, int windowWidthInPixels, int windowHeightInPixels, boolean fullscreen, boolean resizable, float windowWidthInUnits, float fontSizeInUnits)
     {
+        isPlaying = false;
+
         this.targetFps = targetFps;
         this.windowWidthInPixels = windowWidthInPixels;
         this.windowHeightInPixels = windowHeightInPixels;
         this.fullscreen = fullscreen;
         this.resizable = resizable;
 
-        // Todo: Combine with triangle rendering
         // Increase flexibility by measuring in units instead of pixels
         this.windowWidthInUnits = windowWidthInUnits;
+        this.fontSizeInUnits = fontSizeInUnits;
 
-        // Make a temporary view to initialize the rendering
-        view = new View(new Point(0, 0, 0), new Point(0, 0, 0));
-
-        initWindowRenderer();
+        initMainMenu();
+        initWindow();
     }
 
-    private void initWindowRenderer()
+    private void initMainMenu()
+    {
+        mainMenuTitle = "Main Menu";
+        mainMenuTitleRenderer = new TextRenderer(new Font("Times New Roman", Font.BOLD, (int) (2 * fontSizeInUnits * getPixelsPerUnit())));
+        buttonLabelRenderer = new TextRenderer(new Font("Verdana", Font.BOLD, (int) (fontSizeInUnits * getPixelsPerUnit())));
+
+        // In units, not pixels
+        float buttonWidth = 15;
+        float buttonLeftX = windowWidthInUnits / 2 - buttonWidth / 2;
+
+        float buttonHeight = 5;
+        float buttonSpaceBetween = 3;
+        float buttonTopY = buttonHeight + buttonSpaceBetween;
+        float buttonSelectionTopMargin = 10;
+        buttons = new Button[]
+                {
+                        new Button("Singleplayer", buttonLeftX, 1 * buttonTopY + buttonSelectionTopMargin, buttonWidth, buttonHeight),
+                        new Button("Host Server", buttonLeftX, 2 * buttonTopY + buttonSelectionTopMargin, buttonWidth, buttonHeight),
+                        new Button("Join Server", buttonLeftX, 3 * buttonTopY + buttonSelectionTopMargin, buttonWidth, buttonHeight),
+                        new Button("Settings", buttonLeftX, 4 * buttonTopY + buttonSelectionTopMargin, buttonWidth, buttonHeight),
+                        new Button("Exit", buttonLeftX, 5 * buttonTopY + buttonSelectionTopMargin, buttonWidth, buttonHeight)
+                };
+    }
+
+    private void initWindow()
     {
         profile = GLProfile.get(GLProfile.GL2);
         GLCapabilities capabilities = new GLCapabilities(profile);
         window = GLWindow.create(capabilities);
 
         window.setFullscreen(fullscreen);
-        // Todo: Make this work
         window.setSize(windowWidthInPixels, windowHeightInPixels);
 
         window.addGLEventListener(this);
         keyInput = new KeyInput();
         window.addKeyListener(keyInput);
-        mouseInput = new MouseInput(getPixelsPerUnit(), getWindowWidthInUnits(), getWindowHeight());
+        mouseInput = new MouseInput(getPixelsPerUnit(), windowWidthInUnits, windowHeightInUnits);
         window.addMouseListener(mouseInput);
 
         FPSAnimator animator = new FPSAnimator(window, targetFps);
@@ -80,9 +114,11 @@ public class RenderLoop implements GLEventListener
         window.setVisible(true);
 
         window.setTitle("Adventure Generator");
+
+        renderWindow();
     }
 
-    private void initWorldRenderer()
+    private void initRenderer()
     {
         glu = new GLU();
 
@@ -94,8 +130,7 @@ public class RenderLoop implements GLEventListener
 
         gl.glShadeModel(GL2.GL_SMOOTH);
 
-        // Set the clearing colour
-        gl.glClearColor(0f, 0f, 0f, 0f);
+        gl.glClearColor(0.4f, 0.6f, 1.0f, 1.0f);
         gl.glClearDepth(1.0f);
         gl.glEnable(GL2.GL_DEPTH_TEST);
         gl.glDepthFunc(GL2.GL_LEQUAL);
@@ -122,7 +157,7 @@ public class RenderLoop implements GLEventListener
     {
         updateGL2(drawable);
 
-        initWorldRenderer();
+        initRenderer();
     }
 
     @Override
@@ -136,32 +171,24 @@ public class RenderLoop implements GLEventListener
     {
         updateGL2(drawable);
 
-        gl.glShadeModel(GL2.GL_SMOOTH);
-        gl.glClearColor(0, 0, 0, 0);
-        gl.glClearDepth(1);
-        gl.glEnable(GL2.GL_DEPTH_TEST);
-        gl.glDepthFunc(GL2.GL_LEQUAL);
-        gl.glHint(GL2.GL_PERSPECTIVE_CORRECTION_HINT, GL2.GL_NICEST);
-        gl.glTranslatef(0, 100, 0);
-
         // Clear the screen and the depth buffer
         gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
 
         // Reset the View
         gl.glLoadIdentity();
 
-        Point perspective = view.getPerspective();
-        gl.glRotatef(perspective.getX(), 1, 0, 0);
-        gl.glRotatef(perspective.getY(), 0, 1, 0);
-        gl.glRotatef(perspective.getZ(), 0, 0, 1);
-        Point position = view.getPosition();
-        gl.glTranslatef(position.getX(), position.getY(), position.getZ());
-
-        if (world != null)
+        if (isPlaying)
         {
-            view = world.getView();
-            renderWorld();
-            renderUserInterface();
+            if (world != null)
+            {
+                view = world.getView();
+                renderWorld();
+                renderUserInterface();
+            }
+        }
+        else
+        {
+            renderMainMenu();
         }
     }
 
@@ -170,21 +197,35 @@ public class RenderLoop implements GLEventListener
     {
         updateGL2(drawable);
 
-        final GL2 gl = drawable.getGL().getGL2();
-        if (height <= 0)
+        if (isPlaying)
         {
-            height = 1;
+            final GL2 gl = drawable.getGL().getGL2();
+            if (height <= 0)
+            {
+                height = 1;
+            }
+
+            final float screenRatio = (float) width / (float) height;
+            gl.glViewport(0, 0, width, height);
+            gl.glMatrixMode(GL2.GL_PROJECTION);
+            gl.glLoadIdentity();
+
+            // Draw/Render distance
+            glu.gluPerspective(60.0f, screenRatio, 1.0f, 120.0f);
+            gl.glMatrixMode(GL2.GL_MODELVIEW);
+            gl.glLoadIdentity();
         }
+        else
+        {
+            gl.glMatrixMode(GL2.GL_PROJECTION);
+            gl.glLoadIdentity();
 
-        final float h = (float) width / (float) height;
-        gl.glViewport(0, 0, width, height);
-        gl.glMatrixMode(GL2.GL_PROJECTION);
-        gl.glLoadIdentity();
-
-        // Draw/Render distance
-        glu.gluPerspective(60.0f, h, 1.0f, 120.0f);
-        gl.glMatrixMode(GL2.GL_MODELVIEW);
-        gl.glLoadIdentity();
+            windowWidthInPixels = window.getWidth();
+            windowHeightInPixels = window.getHeight();
+            windowHeightInUnits = (float) windowHeightInPixels / getPixelsPerUnit();
+            gl.glOrtho(0, windowWidthInUnits, windowHeightInUnits, 0, -1, 1);
+            gl.glMatrixMode(GL2.GL_MODELVIEW);
+        }
     }
 
     public void renderWindow()
@@ -195,9 +236,137 @@ public class RenderLoop implements GLEventListener
         }
     }
 
+    private void renderMainMenu()
+    {
+        mainMenuTitleRenderer.beginRendering(windowWidthInPixels, windowHeightInPixels);
+        mainMenuTitleRenderer.setColor(1f, 1f, 1f, 1f);
+        mainMenuTitleRenderer.draw(mainMenuTitle, (int) ((windowWidthInUnits / 2 - mainMenuTitle.length() * fontSizeInUnits / 1.8f) * getPixelsPerUnit()),
+                (int) ((windowHeightInUnits - 10) * getPixelsPerUnit()));
+        mainMenuTitleRenderer.endRendering();
+
+        for (Button button : buttons)
+        {
+            String buttonLabel = button.getLabel();
+            float buttonLeftX = button.getLeftX();
+            float buttonTopY = button.getTopY();
+            float buttonWidth = button.getWidth();
+            float buttonHeight = button.getHeight();
+
+            setColor(0.2f, 0.3f, 0.5f, 1.0f);
+            gl.glBegin(GL2.GL_QUADS);
+            gl.glVertex2f(buttonLeftX, buttonTopY);
+            gl.glVertex2f(buttonLeftX + buttonWidth, buttonTopY);
+            gl.glVertex2f(buttonLeftX + buttonWidth, buttonTopY + buttonHeight);
+            gl.glVertex2f(buttonLeftX, buttonTopY + buttonHeight);
+            gl.glEnd();
+            gl.glFlush();
+
+            buttonLabelRenderer.beginRendering(windowWidthInPixels, windowHeightInPixels);
+            buttonLabelRenderer.setColor(1f, 1f, 1f, 1f);
+            buttonLabelRenderer.setSmoothing(true);
+            // Put y to top with windowHeightInPixels in the beginning, then minus instead of plus
+            buttonLabelRenderer.draw(buttonLabel, (int) ((buttonLeftX + buttonWidth / 2 - buttonLabel.length() * fontSizeInUnits / 4) * getPixelsPerUnit()),
+                    (int) ((windowHeightInUnits - buttonTopY - buttonHeight / 2 - fontSizeInUnits / 2.4f) * getPixelsPerUnit()));
+            buttonLabelRenderer.endRendering();
+            if (mouseInput.isPressed(MouseEvent.BUTTON1)
+                    && button.isHovering(mouseInput.getMouseX() / getPixelsPerUnit(), mouseInput.getMouseY() / getPixelsPerUnit()))
+            {
+                switch (button.getLabel())
+                {
+                    case "Singleplayer":
+                    {
+                        gl.glClearColor(0f, 0f, 0f, 1.0f);
+                        UpdateLoop updateLoop = new UpdateLoop(this);
+                        world = new World(updateLoop, false, false);
+                        world.generate();
+
+                        updateLoop.startUpdateLoop(world);
+                        isPlaying = true;
+                        break;
+                    }
+                    case "Host Server":
+                    {
+                        gl.glClearColor(0f, 0f, 0f, 1.0f);
+                        UpdateLoop updateLoop = new UpdateLoop(this);
+                        world = new World(updateLoop, true, true);
+                        world.generate();
+
+                        Server server = new Server(6069);
+                        new Thread(server).start();
+                        try
+                        {
+                            Thread.sleep(100);
+                        }
+                        catch (InterruptedException e)
+                        {
+                            e.printStackTrace();
+                        }
+
+                        Client client = null;
+                        try
+                        {
+                            client = new Client(new InetSocketAddress(InetAddress.getLocalHost(), 6069));
+                        }
+                        catch (UnknownHostException e)
+                        {
+                            e.printStackTrace();
+                        }
+                        new Thread(client).start();
+                        world.setClient(client);
+
+                        updateLoop.startUpdateLoop(world);
+                        isPlaying = true;
+                        break;
+                    }
+                    case "Join Server":
+                    {
+                        gl.glClearColor(0f, 0f, 0f, 1.0f);
+                        UpdateLoop updateLoop = new UpdateLoop(this);
+                        world = new World(updateLoop, true, false);
+                        world.generate();
+
+                        Client client = null;
+                        try
+                        {
+                            client = new Client(new InetSocketAddress(InetAddress.getLocalHost(), 6069));
+                        }
+                        catch (UnknownHostException e)
+                        {
+                            e.printStackTrace();
+                        }
+                        new Thread(client).start();
+                        world.setClient(client);
+
+                        updateLoop.startUpdateLoop(world);
+                        isPlaying = true;
+                        break;
+                    }
+                    case "Settings":
+                    {
+                        System.out.println("Initiate hacking");
+                        break;
+                    }
+                    case "Exit":
+                    {
+                        System.out.println("Goodbye!");
+                        System.exit(0);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     private void renderWorld()
     {
-        if(world.getSeed()==0)return;
+        Point perspective = view.getPerspective();
+        gl.glRotatef(perspective.getX(), 1, 0, 0);
+        gl.glRotatef(perspective.getY(), 0, 1, 0);
+        gl.glRotatef(perspective.getZ(), 0, 0, 1);
+        Point viewPosition = view.getPosition();
+        gl.glTranslatef(viewPosition.getX(), viewPosition.getY(), viewPosition.getZ());
+
+        if (world.getSeed() == 0) return;
         ArrayList<Point> points = world.getAllPoints();
         int pointFieldWidth = world.getChunkPointsPerSide() * world.getChunksX();
         int pointFieldHeight = world.getChunkPointsPerSide() * world.getChunksY();
@@ -209,7 +378,7 @@ public class RenderLoop implements GLEventListener
         }
         gl.glBegin(GL2.GL_TRIANGLES);
         int heightMultiplier = 10;
-        if(points==null)return;
+        if (points == null) return;
         for (int i = 0; i < points.size() - pointFieldWidth - 1; i++)
         {
             float colourModifier = 0.30f + points.get(i).getZ();
@@ -246,11 +415,8 @@ public class RenderLoop implements GLEventListener
         gl.glFlush();
 
         Texture waterTexture = world.getWater().getTexture();
-        if (waterTexture != null)
-        {
-            gl.glBindTexture(GL2.GL_TEXTURE_2D, waterTexture.getTextureObject());
-        }
-        // Todo: Make water transparent
+        if (waterTexture != null) gl.glBindTexture(GL2.GL_TEXTURE_2D, waterTexture.getTextureObject());
+
         setColor(0, 0.5f, 1, 0.9f);
         gl.glBegin(GL2.GL_QUADS);
         gl.glTexCoord2f(0, 0);
@@ -265,13 +431,13 @@ public class RenderLoop implements GLEventListener
         gl.glFlush();
 
         gl.glBegin(GL2.GL_TRIANGLES);
-        for(Player player : world.getPlayers())
+        for (Player player : world.getPlayers())
         {
             setColor(1f, 0f, 0f, 1f);
             Point position = player.getPosition();
-            gl.glVertex3f(-position.getX(), -position.getY(), -position.getZ()+10);
-            gl.glVertex3f(-position.getX()-10, -position.getY(), position.getZ());
-            gl.glVertex3f(-position.getX(), -position.getY()-10, position.getZ()+5);
+            gl.glVertex3f(-position.getX(), -position.getY(), -position.getZ() + 10);
+            gl.glVertex3f(-position.getX() - 10, -position.getY(), position.getZ());
+            gl.glVertex3f(-position.getX(), -position.getY() - 10, position.getZ() + 5);
         }
         gl.glEnd();
         gl.glFlush();
@@ -280,7 +446,7 @@ public class RenderLoop implements GLEventListener
     private void renderUserInterface()
     {
         TextRenderer textRenderer = new TextRenderer(new Font("Verdana", Font.BOLD, 16));
-        textRenderer.beginRendering(900, 700);
+        textRenderer.beginRendering(windowWidthInPixels, windowHeightInPixels);
         textRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
         textRenderer.setSmoothing(true);
         textRenderer.draw("O2: " + (int) world.getControlledPlayer().getOxygen()
@@ -293,15 +459,14 @@ public class RenderLoop implements GLEventListener
 
     private float getLength(double xDifference, double yDifference)
     {
-        if (xDifference < 0)
-        {
-            xDifference *= -1;
-        }
-        if (yDifference < 0)
-        {
-            yDifference *= -1;
-        }
+        if (xDifference < 0) xDifference *= -1;
+        if (yDifference < 0) yDifference *= -1;
         return (float) Math.sqrt(xDifference * xDifference + yDifference * yDifference);
+    }
+
+    private float getPixelsPerUnit()
+    {
+        return windowWidthInPixels / windowWidthInUnits;
     }
 
     private void setColor(float red, float green, float blue, float alpha)
@@ -314,33 +479,9 @@ public class RenderLoop implements GLEventListener
      */
     private float validateColor(float color)
     {
-        if (color < 0)
-        {
-            return 0;
-        }
-        else if (color > 1)
-        {
-            return 1;
-        }
-        else
-        {
-            return color;
-        }
-    }
-
-    private float getWindowWidthInUnits()
-    {
-        return windowWidthInUnits;
-    }
-
-    private float getWindowHeight()
-    {
-        return window.getHeight() / getPixelsPerUnit();
-    }
-
-    private float getPixelsPerUnit()
-    {
-        return window.getWidth() / windowWidthInUnits;
+        if (color < 0f) return 0f;
+        else if (color > 1f) return 1f;
+        else return color;
     }
 
     public GLProfile getProfile()
@@ -361,15 +502,5 @@ public class RenderLoop implements GLEventListener
     public int getTargetFps()
     {
         return targetFps;
-    }
-
-    public void setWorld(World world)
-    {
-        this.world = world;
-    }
-
-    public View getView()
-    {
-        return view;
     }
 }

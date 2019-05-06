@@ -3,7 +3,6 @@ package ch.kbw.multiplayer;
 import ch.kbw.packet.Packet;
 import ch.kbw.packet.PacketRegisterUser;
 import ch.kbw.packet.PacketSeed;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -18,48 +17,52 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Server implements Runnable {
-
+public class Server implements Runnable
+{
     private ServerSocketChannel channel;
     private ArrayList<Packet> queue;
 
     private HashMap<SocketAddress, ServerMember> clients;
 
     private int port;
-    private boolean running = false;
+    private boolean running;
 
     private double seed;
 
     private HandlePacket handlePacket;
 
-    public Server(int port) {
+    public Server(int port)
+    {
         this.port = port;
         running = true;
         handlePacket = new HandlePacket(this);
         clients = new HashMap<>();
         queue = new ArrayList<>();
-        try {
+        try
+        {
             channel = ServerSocketChannel.open();
-        } catch (IOException ex) {
+        }
+        catch (IOException ex)
+        {
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    public void setSeed(double seed) {
-        this.seed = seed;
-    }
-
-    public HashMap<SocketAddress, ServerMember> getClients() {
+    public HashMap<SocketAddress, ServerMember> getClients()
+    {
         return clients;
     }
 
-    public void queuePacket(Packet packet) {
+    private void queuePacket(Packet packet)
+    {
         queue.add(packet);
     }
 
     @Override
-    public void run() {
-        try {
+    public void run()
+    {
+        try
+        {
             channel.bind(new InetSocketAddress(InetAddress.getLocalHost(), port));
             channel.configureBlocking(false);
 
@@ -70,59 +73,72 @@ public class Server implements Runnable {
             ByteBuffer writeBuffer = ByteBuffer.allocate(2048);
             System.out.println("Server is running now");
 
-            Random r = new Random();
-            seed = r.nextDouble() + 1;
+            Random random = new Random();
+            seed = random.nextDouble() + 1;
 
-            while (running) {
-                if (selector.selectNow() > 0) {
+            while (running)
+            {
+                if (selector.selectNow() > 0)
+                {
                     Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
-                    while (iterator.hasNext()) {
+                    while (iterator.hasNext())
+                    {
                         SelectionKey key = iterator.next();
-                        if (key.isAcceptable()) {
-                            try {
+                        if (key.isAcceptable())
+                        {
+                            try
+                            {
                                 System.out.println("User Found");
 
-                                SocketChannel sChannel = channel.accept();
-                                SocketAddress sender = sChannel.getRemoteAddress();
+                                SocketChannel socketChannel = channel.accept();
+                                SocketAddress sender = socketChannel.getRemoteAddress();
 
-                                sChannel.configureBlocking(false);
+                                socketChannel.configureBlocking(false);
 
-                                sChannel.register(selector, SelectionKey.OP_READ);
+                                socketChannel.register(selector, SelectionKey.OP_READ);
 
                                 //Seed versenden
-                                PacketSeed ps = new PacketSeed(seed, r.nextInt());
-                                PacketRegisterUser pru = new PacketRegisterUser(ps.getId());
-                                for (SocketAddress a : clients.keySet()) {
-                                    if (!a.equals(clients.get(sChannel))) {
-                                        pru.addTarget(a);
+                                PacketSeed packetSeed = new PacketSeed(seed, random.nextInt());
+                                PacketRegisterUser packetRegisterUser = new PacketRegisterUser(packetSeed.getId());
+                                for (SocketAddress a : clients.keySet())
+                                {
+                                    if (!a.equals(clients.get(socketChannel)))
+                                    {
+                                        packetRegisterUser.addTarget(a);
                                     }
                                 }
-                                queuePacket(pru);
-                                for(ServerMember sm : clients.values()) {
-                                    pru = new PacketRegisterUser(sm.getId());
-                                    ps.addTarget(sChannel.getRemoteAddress());
-                                    queuePacket(pru);
+                                queuePacket(packetRegisterUser);
+                                for (ServerMember serverMember : clients.values())
+                                {
+                                    packetRegisterUser = new PacketRegisterUser(serverMember.getId());
+                                    packetSeed.addTarget(socketChannel.getRemoteAddress());
+                                    queuePacket(packetRegisterUser);
                                 }
-                                clients.put(sChannel.getRemoteAddress(), new ServerMember(sChannel, ps.getId()));
-                                ps.addTarget(sChannel.getRemoteAddress());
-                                queuePacket(ps);
-                            } catch (ClosedChannelException ex) {
+                                clients.put(socketChannel.getRemoteAddress(), new ServerMember(socketChannel, packetSeed.getId()));
+                                packetSeed.addTarget(socketChannel.getRemoteAddress());
+                                queuePacket(packetSeed);
+                            }
+                            catch (ClosedChannelException e)
+                            {
                                 System.out.println("User disconnected");
                             }
                         }
-                        if (key.isReadable()) {
-                            SocketChannel sChannel = (SocketChannel) key.channel();
+                        if (key.isReadable())
+                        {
+                            SocketChannel socketChannel = (SocketChannel) key.channel();
 
                             readBuffer.position(0);
                             readBuffer.limit(readBuffer.capacity());
-                            sChannel.read(readBuffer);
+                            socketChannel.read(readBuffer);
                             readBuffer.flip();
 
                             Packet packet = Packet.decompilePacket(readBuffer);
                             packet.clearTargets();
-                            for (SocketAddress a : clients.keySet()) {
-                                if (!a.equals(clients.get(sChannel))) {
-                                    packet.addTarget(a);
+                            for (SocketAddress socketAddress : clients.keySet())
+                            {
+                                if (!socketAddress.equals(clients.get(socketChannel)))
+                                {
+                                    packet.addTarget(socketAddress);
                                 }
                             }
                             queuePacket(packet);
@@ -132,9 +148,11 @@ public class Server implements Runnable {
                     }
                 }
 
-                if (!queue.isEmpty()) {
+                if (!queue.isEmpty())
+                {
                     Iterator<Packet> packetIterator = queue.iterator();
-                    while (packetIterator.hasNext()) {
+                    while (packetIterator.hasNext())
+                    {
                         Packet packet = packetIterator.next();
                         writeBuffer.position(0);
                         writeBuffer.limit(writeBuffer.capacity());
@@ -143,7 +161,8 @@ public class Server implements Runnable {
 
                         Iterator<SocketAddress> targetIterator = packet.getTargets().iterator();
 
-                        while (targetIterator.hasNext()) {
+                        while (targetIterator.hasNext())
+                        {
                             SocketAddress target = targetIterator.next();
                             System.out.println(target);
                             clients.get(target).getSocketChannel().write(writeBuffer);
@@ -154,13 +173,15 @@ public class Server implements Runnable {
                     }
                 }
             }
-
-        } catch (UnknownHostException ex) {
-            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        }
+        catch (UnknownHostException e)
+        {
+            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, e);
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
             System.out.println("User disconnected 2");
         }
-
     }
 }

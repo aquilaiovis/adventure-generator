@@ -2,11 +2,6 @@ package ch.kbw.update;
 
 import ch.kbw.utils.Point;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.UnknownHostException;
-
 public class Player
 {
     private Point position;
@@ -33,12 +28,14 @@ public class Player
         handleWater();
     }
 
-    private void handleStamina(){
+    private void handleStamina()
+    {
 
     }
 
-    private void handleWater(){
-        setWater(water-0.0005f);
+    private void handleWater()
+    {
+        setWater(water - 0.0005f);
     }
 
     private void handleOxygen()
@@ -57,7 +54,7 @@ public class Player
             {
                 oxygen -= 0.1f;
             }
-            setWater(water+2.5f);
+            setWater(water + 2.5f);
         }
     }
 
@@ -73,20 +70,26 @@ public class Player
             {
                 health -= 0.5;
             }
-            if(food<=20){
-                setHealth(health-0.1f);
+            if (food <= 20)
+            {
+                setHealth(health - 0.1f);
             }
-            if(water<=30){
-                setHealth(health-0.3f);
+            if (water <= 30)
+            {
+                setHealth(health - 0.3f);
             }
         }
-        if(health < 100){
-            if(food >= 80){
+        if (health < 100)
+        {
+            if (food >= 80)
+            {
                 health += 0.3;
-                setFood(food-0.025f);
-            }else if(food >= 50){
+                setFood(food - 0.025f);
+            }
+            else if (food >= 50)
+            {
                 health += 0.05;
-                setFood(food-0.045f);
+                setFood(food - 0.045f);
             }
         }
     }
@@ -133,44 +136,65 @@ public class Player
 
     }
 
-    public float getStamina() {
+    public float getStamina()
+    {
         return stamina;
     }
 
-    public void setStamina(float stamina) {
-        if (stamina > 100){
+    public void setStamina(float stamina)
+    {
+        if (stamina > 100)
+        {
             this.stamina = 100;
-        }else if (stamina < 0){
+        }
+        else if (stamina < 0)
+        {
             this.stamina = 0;
-        }else{
+        }
+        else
+        {
             this.stamina = stamina;
         }
     }
 
-    public float getFood() {
+    public float getFood()
+    {
         return food;
     }
 
-    public void setFood(float food) {
-        if (food > 100){
+    public void setFood(float food)
+    {
+        if (food > 100)
+        {
             this.food = 100;
-        }else if (food < 0){
+        }
+        else if (food < 0)
+        {
             this.food = 0;
-        }else{
+        }
+        else
+        {
             this.food = food;
         }
     }
 
-    public float getWater() {
+    public float getWater()
+    {
         return water;
     }
 
-    public void setWater(float water) {
-        if (water > 100){
+    public void setWater(float water)
+    {
+        if (water > 100)
+        {
             this.water = 100;
-        }else if (water < 0){
+        }
+        else if (water < 0)
+        {
             this.water = 0;
-        }else{
+        }
+        else
+        {
             this.water = water;
         }
     }
@@ -196,11 +220,13 @@ public class Player
         }
     }
 
-    public int getId() {
+    public int getId()
+    {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(int id)
+    {
         this.id = id;
     }
 }

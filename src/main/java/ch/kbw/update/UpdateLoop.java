@@ -11,16 +11,15 @@ public class UpdateLoop
     private int targetUpdateInterval, renderedFrames;
     private World world;
 
-    public UpdateLoop(RenderLoop renderLoop, boolean multiplayer, boolean server)
+    public UpdateLoop(RenderLoop renderLoop)
     {
         this.renderLoop = renderLoop;
         running = true;
         paused = false;
         renderedFrames = 0;
-        world = new World(this, multiplayer, server);
     }
 
-    public void startUpdateLoop()
+    public void startUpdateLoop(World world)
     {
         targetUpdateInterval = 1000000000 / renderLoop.getTargetFps();
 
@@ -77,7 +76,7 @@ public class UpdateLoop
         gameLoopThread.start();
     }
 
-    public float updateDifference()
+    public float getUpdateDelta()
     {
         return 1.0f / 1000000000 * targetUpdateInterval;
     }

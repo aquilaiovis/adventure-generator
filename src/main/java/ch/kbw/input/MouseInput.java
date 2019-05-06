@@ -1,6 +1,5 @@
 package ch.kbw.input;
 
-import com.jogamp.newt.event.KeyEvent;
 import com.jogamp.newt.event.MouseEvent;
 import com.jogamp.newt.event.MouseListener;
 
@@ -40,18 +39,12 @@ public class MouseInput implements MouseListener
 
     public void mousePressed(MouseEvent e)
     {
-        if (0 == (KeyEvent.AUTOREPEAT_MASK & e.getModifiers()))
-        {
-            buttons[e.getButton()] = true;
-        }
+        buttons[e.getButton()] = true;
     }
 
     public void mouseReleased(MouseEvent e)
     {
-        if (0 == (KeyEvent.AUTOREPEAT_MASK & e.getModifiers()))
-        {
-            buttons[e.getButton()] = false;
-        }
+        buttons[e.getButton()] = false;
     }
 
     public void mouseMoved(MouseEvent e)

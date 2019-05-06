@@ -1,81 +1,86 @@
 package ch.kbw.packet;
 
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 
-public class PacketPosition extends Packet {
-
-    private float x;
-    private float y;
-    private float z;
-    private float pX;
-    private float pY;
-    private float pZ;
+public class PacketPosition extends Packet
+{
+    private float positionX;
+    private float positionY;
+    private float positionZ;
+    private float perspectiveX;
+    private float perspectiveY;
+    private float perspectiveZ;
     private int id;
 
-    public PacketPosition() {
-
-    }
-
-    public PacketPosition(float x, float y, float z, float pX, float pY, float pZ, int id) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-        this.pX = pX;
-        this.pY = pY;
-        this.pZ = pZ;
+    public PacketPosition(float positionX, float positionY, float positionZ, float perspectiveX, float perspectiveY, float perspectiveZ, int id)
+    {
+        this.positionX = positionX;
+        this.positionY = positionY;
+        this.positionZ = positionZ;
+        this.perspectiveX = perspectiveX;
+        this.perspectiveY = perspectiveY;
+        this.perspectiveZ = perspectiveZ;
         this.id = id;
     }
 
-    public float getX() {
-        return x;
+    public float getPositionX()
+    {
+        return positionX;
     }
 
-    public float getY() {
-        return y;
+    public float getPositionY()
+    {
+        return positionY;
     }
 
-    public float getZ() {
-        return z;
+    public float getPositionZ()
+    {
+        return positionZ;
     }
 
-    public float getpX() {
-        return pX;
+    public float getPerspectiveX()
+    {
+        return perspectiveX;
     }
 
-    public float getpY() {
-        return pY;
+    public float getPerspectiveY()
+    {
+        return perspectiveY;
     }
 
-    public float getpZ() {
-        return pZ;
+    public float getPerspectiveZ()
+    {
+        return perspectiveZ;
     }
 
-    public int getId() {
+    public int getId()
+    {
         return id;
     }
 
     @Override
-    public void serialize(ByteBuffer buffer) {
+    public void serialize(ByteBuffer buffer)
+    {
         //TODO: Serialize
-        buffer.putFloat(x);
-        buffer.putFloat(y);
-        buffer.putFloat(z);
-        buffer.putFloat(pX);
-        buffer.putFloat(pY);
-        buffer.putFloat(pZ);
+        buffer.putFloat(positionX);
+        buffer.putFloat(positionY);
+        buffer.putFloat(positionZ);
+        buffer.putFloat(perspectiveX);
+        buffer.putFloat(perspectiveY);
+        buffer.putFloat(perspectiveZ);
         buffer.putInt(id);
     }
 
     @Override
-    public void deserialize(ByteBuffer buffer) {
+    public void deserialize(ByteBuffer buffer)
+    {
         //TODO: Deserialize
-        x = buffer.getFloat();
-        y = buffer.getFloat();
-        z = buffer.getFloat();
-        pX = buffer.getFloat();
-        pY = buffer.getFloat();
-        pZ = buffer.getFloat();
+        positionX = buffer.getFloat();
+        positionY = buffer.getFloat();
+        positionZ = buffer.getFloat();
+        perspectiveX = buffer.getFloat();
+        perspectiveY = buffer.getFloat();
+        perspectiveZ = buffer.getFloat();
         id = buffer.getInt();
     }
 }
