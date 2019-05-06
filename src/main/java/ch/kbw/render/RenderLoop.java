@@ -35,10 +35,10 @@ public class RenderLoop implements GLEventListener
     private int targetFps, windowWidthInPixels, windowHeightInPixels;
     private boolean fullscreen;
     private float windowWidthInUnits, windowHeightInUnits, fontSizeInUnits;
-    private TextRenderer mainMenuTitleRenderer, buttonLabelRenderer;
+    private TextRenderer mainMenuTitleRenderer, buttonLabelRenderer, guiRenderer, pauseRenderer;
     private String mainMenuTitle;
     private Button[] buttons;
-    private boolean isPlaying;
+    private boolean playing;
 
     private World world;
     private View view;
@@ -48,7 +48,7 @@ public class RenderLoop implements GLEventListener
 
     public RenderLoop(int targetFps, int windowWidthInPixels, int windowHeightInPixels, boolean fullscreen, boolean resizable, float windowWidthInUnits, float fontSizeInUnits)
     {
-        isPlaying = false;
+        playing = false;
 
         this.targetFps = targetFps;
         this.windowWidthInPixels = windowWidthInPixels;
@@ -59,6 +59,9 @@ public class RenderLoop implements GLEventListener
         // Increase flexibility by measuring in units instead of pixels
         this.windowWidthInUnits = windowWidthInUnits;
         this.fontSizeInUnits = fontSizeInUnits;
+
+        guiRenderer = new TextRenderer(new Font("Verdana", Font.BOLD, (int) (fontSizeInUnits * getPixelsPerUnit())));
+        pauseRenderer = new TextRenderer(new Font("Verdana", Font.BOLD, (int) (fontSizeInUnits * getPixelsPerUnit() * 2)));
 
         initMainMenu();
         initWindow();
@@ -177,7 +180,7 @@ public class RenderLoop implements GLEventListener
         // Reset the View
         gl.glLoadIdentity();
 
-        if (isPlaying)
+        if (playing)
         {
             if (world != null)
             {
@@ -197,7 +200,7 @@ public class RenderLoop implements GLEventListener
     {
         updateGL2(drawable);
 
-        if (isPlaying)
+        if (playing)
         {
             final GL2 gl = drawable.getGL().getGL2();
             if (height <= 0)
@@ -211,7 +214,7 @@ public class RenderLoop implements GLEventListener
             gl.glLoadIdentity();
 
             // Draw/Render distance
-            glu.gluPerspective(60.0f, screenRatio, 1.0f, 120.0f);
+            glu.gluPerspective(60.0f, screenRatio, 1.0f, 60.0f);
             gl.glMatrixMode(GL2.GL_MODELVIEW);
             gl.glLoadIdentity();
         }
@@ -277,18 +280,19 @@ public class RenderLoop implements GLEventListener
                     {
                         gl.glClearColor(0f, 0f, 0f, 1.0f);
                         UpdateLoop updateLoop = new UpdateLoop(this);
-                        world = new World(updateLoop, false, false);
+                        world = new World(updateLoop, false);
                         world.generate();
 
                         updateLoop.startUpdateLoop(world);
-                        isPlaying = true;
+                        playing = true;
+                        window.setFullscreen(true);
                         break;
                     }
                     case "Host Server":
                     {
                         gl.glClearColor(0f, 0f, 0f, 1.0f);
                         UpdateLoop updateLoop = new UpdateLoop(this);
-                        world = new World(updateLoop, true, true);
+                        world = new World(updateLoop, true);
                         world.generate();
 
                         Server server = new Server(6069);
@@ -315,14 +319,15 @@ public class RenderLoop implements GLEventListener
                         world.setClient(client);
 
                         updateLoop.startUpdateLoop(world);
-                        isPlaying = true;
+                        playing = true;
+                        window.setFullscreen(true);
                         break;
                     }
                     case "Join Server":
                     {
                         gl.glClearColor(0f, 0f, 0f, 1.0f);
                         UpdateLoop updateLoop = new UpdateLoop(this);
-                        world = new World(updateLoop, true, false);
+                        world = new World(updateLoop, true);
                         world.generate();
 
                         Client client = null;
@@ -338,7 +343,8 @@ public class RenderLoop implements GLEventListener
                         world.setClient(client);
 
                         updateLoop.startUpdateLoop(world);
-                        isPlaying = true;
+                        playing = true;
+                        window.setFullscreen(true);
                         break;
                     }
                     case "Settings":
@@ -445,16 +451,24 @@ public class RenderLoop implements GLEventListener
 
     private void renderUserInterface()
     {
-        TextRenderer textRenderer = new TextRenderer(new Font("Verdana", Font.BOLD, 16));
-        textRenderer.beginRendering(windowWidthInPixels, windowHeightInPixels);
-        textRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-        textRenderer.setSmoothing(true);
-        textRenderer.draw("O2: " + (int) world.getControlledPlayer().getOxygen()
-                + "%          Food: " + (int) world.getControlledPlayer().getFood()
-                + "%          Water: " + (int) world.getControlledPlayer().getWater()
-                + "%          Health: " + (int) world.getControlledPlayer().getHealth()
-                + "%          Stamina: " + (int) world.getControlledPlayer().getStamina() + "%", 10, 10);
-        textRenderer.endRendering();
+        guiRenderer.beginRendering(windowWidthInPixels, windowHeightInPixels);
+        guiRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+        guiRenderer.setSmoothing(true);
+        guiRenderer.draw("Health: " + (int) world.getControlledPlayer().getHealth() + "%"
+                + "          Saturation: " + (int) world.getControlledPlayer().getSaturation() + "%"
+                + "          Hydration: " + (int) world.getControlledPlayer().getHydration() + "%"
+                + "          Oxygen: " + (int) world.getControlledPlayer().getOxygen() + "%"
+                + "          Stamina: " + (int) world.getControlledPlayer().getStamina() + "%", 10, 10);
+        guiRenderer.endRendering();
+        if (world.getUpdateLoop().isPaused())
+        {
+            pauseRenderer.beginRendering(windowWidthInPixels, windowHeightInPixels);
+            pauseRenderer.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+            pauseRenderer.setSmoothing(true);
+            pauseRenderer.draw("PAUSED", windowWidthInPixels / 2 - (int) (fontSizeInUnits * getPixelsPerUnit() * 5),
+                    windowHeightInPixels / 2 + (int) (fontSizeInUnits * getPixelsPerUnit() / 2));
+            pauseRenderer.endRendering();
+        }
     }
 
     private float getLength(double xDifference, double yDifference)

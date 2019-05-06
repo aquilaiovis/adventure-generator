@@ -11,7 +11,6 @@ import ch.kbw.update.Player;
 import ch.kbw.update.UpdateLoop;
 import ch.kbw.update.View;
 import com.jogamp.newt.event.KeyEvent;
-
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -31,21 +30,18 @@ public class World
     private Sprite water;
     private NoiseGenerator noiseGenerator;
     private Client client;
-    private boolean server;
     private boolean multiplayer;
     private double seed;
 
-    public World(UpdateLoop updateLoop, boolean multiplayer, boolean server)
+    public World(UpdateLoop updateLoop, boolean multiplayer)
     {
         this.updateLoop = updateLoop;
         this.multiplayer = multiplayer;
-        this.server = server;
 
         renderLoop = updateLoop.getRenderLoop();
         players = new ArrayList<>();
-        Player player1 = new Player(new Point(-50, -50, -50), new Point(-80, 0, -180));
-        players.add(player1);
-        controlledPlayer = player1;
+        controlledPlayer = new Player(new Point(-50, -50, -50), new Point(-80, 0, -180));
+        players.add(controlledPlayer);
         view = new View(controlledPlayer.getPosition(), controlledPlayer.getPerspective());
         keyInput = renderLoop.getKeyInput();
         mouseInput = renderLoop.getMouseInput();
@@ -154,52 +150,14 @@ public class World
         {
             movementSpeed = movementSpeed / 2;
         }
-        float floatingHeight = 0.8f;
-        float pZ = controlledPlayer.getPerspective().getZ();
-        if (pZ < 0)
-        {
-            //Denn isch dumm gloffe...
-            pZ = pZ * -1;
-        }
-        pZ = pZ % 360;
-        int sector = (int) (pZ / 90);
-        float vX = (pZ % 90) / 90;
-        float vY = -vX + 1;
+        float floatingHeight = 5f;
 
-        if (sector == 0)
-        {
-            vX = vX * -1;
-        }
-        else if (sector == 3)
-        {//Stimmt
-            vX = vX * -1;
-            vY = vY * -1;
-        }
-        else if (sector == 2)
-        {
-            vY = vY * -1;
-        }
-        //System.out.println(sector);
-
-        if (sector == 0)
-        {
-            vX = vX * -1;
-        }
-        else if (sector == 3)
-        {//Stimmt
-            vX = vX * -1;
-            vY = vY * -1;
-        }
-        else if (sector == 2)
-        {
-            vY = vY * -1;
-        }
-        boolean isResting = true;
+        boolean resting = true;
         if (keyInput.isPressed(KeyEvent.VK_SHIFT) && controlledPlayer.getStamina() >= 60)
         {
             movementSpeed *= 2;
             controlledPlayer.setStamina(controlledPlayer.getStamina() - 0.1f);
-            controlledPlayer.setWater(controlledPlayer.getWater() - 0.001f);
+            controlledPlayer.setHydration(controlledPlayer.getHydration() - 0.001f);
         }
         else if (keyInput.isPressed(KeyEvent.VK_CONTROL))
         {
@@ -209,30 +167,28 @@ public class World
         }
         if (keyInput.isPressed(KeyEvent.VK_D))
         {
-            isResting = false;
-            position.addToX(movementSpeed);
+            resting = false;
+            position.addToY(movementSpeed);
         }
         if (keyInput.isPressed(KeyEvent.VK_A))
         {
-            isResting = false;
-            position.addToX(-movementSpeed);
+            resting = false;
+            position.addToY(-movementSpeed);
         }
         if (keyInput.isPressed(KeyEvent.VK_W))
         {
-            isResting = false;
-            position.addToX(movementSpeed * vY);
-            position.addToY(movementSpeed * vX);
+            resting = false;
+            position.addToX(-movementSpeed);
         }
         if (keyInput.isPressed(KeyEvent.VK_S))
         {
-            isResting = false;
-            position.addToX(-(movementSpeed * vY));
-            position.addToY(-(movementSpeed * vX));
+            resting = false;
+            position.addToX(movementSpeed);
         }
-        if (isResting
-                && controlledPlayer.getFood() >= 40
+        if (resting
+                && controlledPlayer.getSaturation() >= 40
                 && controlledPlayer.getOxygen() >= 80
-                && controlledPlayer.getWater() >= 45
+                && controlledPlayer.getHydration() >= 45
                 && controlledPlayer.getHealth() >= 60)
         {
             controlledPlayer.setStamina(controlledPlayer.getStamina() + 0.12f);
@@ -243,7 +199,7 @@ public class World
         {
             if (point.getX() == ((int) position.getX() * -1) && point.getY() == ((int) position.getY() * -1))
             {
-                position.setZ(-((point.getZ() + floatingHeight) * 10));
+                position.setZ(point.getZ() * -10 - floatingHeight);
             }
         }
     }
@@ -307,5 +263,10 @@ public class World
     public void setSeed(double seed)
     {
         this.seed = seed;
+    }
+
+    public UpdateLoop getUpdateLoop()
+    {
+        return updateLoop;
     }
 }

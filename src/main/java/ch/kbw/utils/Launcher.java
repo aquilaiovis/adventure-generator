@@ -6,6 +6,6 @@ public class Launcher
 {
     public static void main(String[] args)
     {
-        RenderLoop renderLoop = new RenderLoop(60, 1080, 720, false, false, 100, 1);
+        RenderLoop renderLoop = new RenderLoop(60, 1080, 720, false, false, 100, 1.4f);
     }
 }
